@@ -27,7 +27,7 @@ export class DocumentApi {
    * Note: This will always create a new document, even if one exists with the same id
    * Uses POST /index/:index/documents with array body
    */
-  async upsert(indexName: IndexName, document: DocumentWithId): Promise<DocumentOperationResponse> {
+  async insert(indexName: IndexName, document: DocumentWithId): Promise<DocumentOperationResponse> {
     if (!document.id) {
       throw new ValidationError('Document must have an id field', 'id');
     }
@@ -87,7 +87,7 @@ export class DocumentApi {
    * Note: This will always create new documents, even if documents exist with the same ids
    * Uses POST /index/:index/documents with array body
    */
-  async batchUpsert(
+  async batchInsert(
     indexName: IndexName,
     documents: ReadonlyArray<DocumentWithId>
   ): Promise<BatchOperationResponse> {

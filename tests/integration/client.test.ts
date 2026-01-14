@@ -170,7 +170,7 @@ describe.skipIf(!shouldRunIntegrationTests)('Integration Tests', () => {
       };
 
       // Step 1: Insert the document
-      const createResponse = await client.documents.upsert(indexName, testDocument);
+      const createResponse = await client.documents.insert(indexName, testDocument);
       expect(createResponse).toBeDefined();
       expect(createResponse.status).toBeDefined();
       expect(createResponse.data.success).toBe(true);

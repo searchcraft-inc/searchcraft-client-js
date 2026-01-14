@@ -15,7 +15,7 @@ describe('DocumentApi', () => {
     request: vi.fn(),
   };
 
-  describe('upsert', () => {
+  describe('insert', () => {
     it('should insert a document', async () => {
       const mockResponse = {
         status: 200,
@@ -28,7 +28,7 @@ describe('DocumentApi', () => {
       const indexName = createIndexName('test-index');
       const document = { id: '123', title: 'Test' };
 
-      const result = await api.upsert(indexName, document);
+      const result = await api.insert(indexName, document);
 
       expect(result).toEqual(mockResponse.data);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
@@ -47,7 +47,7 @@ describe('DocumentApi', () => {
       // Intentionally create an invalid document without id to test validation
       const document = { title: 'Test' } as unknown as DocumentWithId;
 
-      await expect(api.upsert(indexName, document)).rejects.toThrow(ValidationError);
+      await expect(api.insert(indexName, document)).rejects.toThrow(ValidationError);
     });
   });
 
@@ -90,7 +90,7 @@ describe('DocumentApi', () => {
     });
   });
 
-  describe('batchUpsert', () => {
+  describe('batchInsert', () => {
     it('should batch insert documents', async () => {
       const mockResponse = {
         status: 200,
@@ -106,7 +106,7 @@ describe('DocumentApi', () => {
         { id: '2', title: 'Test 2' },
       ];
 
-      const result = await api.batchUpsert(indexName, documents);
+      const result = await api.batchInsert(indexName, documents);
 
       expect(result).toEqual(mockResponse.data);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
@@ -123,7 +123,7 @@ describe('DocumentApi', () => {
       const api = new DocumentApi(mockConfig, mockHttpClient);
       const indexName = createIndexName('test-index');
 
-      await expect(api.batchUpsert(indexName, [])).rejects.toThrow(ValidationError);
+      await expect(api.batchInsert(indexName, [])).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError if any document has no id', async () => {
@@ -135,7 +135,7 @@ describe('DocumentApi', () => {
         { title: 'Test 2' },
       ] as unknown as ReadonlyArray<DocumentWithId>;
 
-      await expect(api.batchUpsert(indexName, documents)).rejects.toThrow(ValidationError);
+      await expect(api.batchInsert(indexName, documents)).rejects.toThrow(ValidationError);
     });
   });
 

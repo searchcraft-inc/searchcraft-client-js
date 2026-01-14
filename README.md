@@ -240,8 +240,8 @@ import { createIndexName } from '@searchcraft/client';
 
 const indexName = createIndexName('my-index');
 
-// Insert a document (note: always creates a new document, even if one exists with the same id)
-await client.documents.upsert(indexName, {
+// Insert a document
+await client.documents.insert(indexName, {
   id: '123',
   title: 'Product Title',
   description: 'Product description',
@@ -252,7 +252,7 @@ await client.documents.upsert(indexName, {
 await client.documents.delete(indexName, '123');
 
 // Batch insert documents
-await client.documents.batchUpsert(indexName, [
+await client.documents.batchInsert(indexName, [
   { id: '1', title: 'Product 1' },
   { id: '2', title: 'Product 2' },
 ]);
@@ -281,10 +281,12 @@ console.log('Healthy:', health.data.healthy);
 
 ### Document API
 
-- `upsert(indexName: IndexName, document: DocumentWithId): Promise<DocumentOperationResponse>`
-- `delete(indexName: IndexName, documentId: string | number): Promise<DocumentOperationResponse>`
-- `batchUpsert(indexName: IndexName, documents: DocumentWithId[]): Promise<BatchOperationResponse>`
-- `batchDelete(indexName: IndexName, documentIds: (string | number)[]): Promise<BatchOperationResponse>`
+- `insert(indexName: IndexName, document: DocumentWithId): Promise<DocumentOperationResponse>` - Insert a document
+- `delete(indexName: IndexName, documentId: string | number): Promise<DocumentOperationResponse>` - Delete a document by id
+- `batchInsert(indexName: IndexName, documents: DocumentWithId[]): Promise<BatchOperationResponse>` - Batch insert documents
+- `batchDelete(indexName: IndexName, documentIds: (string | number)[]): Promise<BatchOperationResponse>` - Batch delete documents by ids
+- `deleteAll(indexName: IndexName): Promise<DocumentOperationResponse>` - Delete all documents from an index
+- `get(indexName: IndexName, internalId: string): Promise<DocumentWithId>` - Get a document by its internal Searchcraft ID (_id)
 
 ### Health API
 
