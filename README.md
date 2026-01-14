@@ -1,6 +1,30 @@
-# Searchcraft TypeScript Client
+<img alt="Searchcraft" src="https://raw.githubusercontent.com/searchcraft-inc/searchcraft-client-js/main/header.png">
 
-A TypeScript client library for the Searchcraft API.
+<h1 align="center">Searchcraft TypeScript Client</h1>
+
+<p align="center">
+A TypeScript client library for the <a href="https://searchcraft.io">Searchcraft</a> API.
+</p>
+
+<p align="center">
+  <a href="https://docs.searchcraft.io"><strong>Documentation</strong></a> ·
+  <a href="https://searchcraft.io"><strong>Website</strong></a> ·
+  <a href="https://github.com/searchcraft-inc/searchcraft-client-js/issues"><strong>Issues</strong></a>
+</p>
+
+<p align="center">
+  <a href="https://www.typescriptlang.org/">
+    <img src="https://img.shields.io/badge/TypeScript-5.9-blue.svg?logo=typescript&style=flat" alt="TypeScript">
+  </a>
+  <a href="https://nodejs.org/en/">
+    <img src="https://img.shields.io/badge/Node.js-18+-339933.svg?logo=node.js&style=flat" alt="Node.js">
+  </a>
+  <a href="https://github.com/searchcraft-inc/searchcraft-client-js/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat" alt="License">
+  </a>
+</p>
+
+---
 
 ## Features
 
@@ -103,7 +127,9 @@ const response = await client.search.searchIndex(indexName, fuzzyQuery);
 
 ### Query Builder
 
-The query builder provides a fluent, immutable API for constructing complex queries:
+The query builder provides a fluent, immutable API for constructing complex queries.
+
+> **📚 Full Query Syntax Documentation:** For complete details on the Searchcraft query language, operators, and advanced features, see the [official documentation](https://docs.searchcraft.io).
 
 ```typescript
 import { exact } from '@searchcraft/client';
@@ -188,9 +214,9 @@ const request = fuzzy().term('search term').buildRequest();
 const response = await client.search.searchFederation(federationName, request);
 ```
 
-### Advanced: Multiple Query Modes
+### Advanced: Raw Query Objects
 
-Combine different query modes with occur parameters:
+For complex queries or when you need maximum control, you can construct request objects directly instead of using the query builder:
 
 ```typescript
 const request = {
@@ -204,6 +230,8 @@ const request = {
 
 const response = await client.search.searchIndex(indexName, request);
 ```
+
+**Note:** The query builder (e.g., `fuzzy().term()...`) is recommended for most use cases. Use raw objects when you need to dynamically construct complex queries or have specific requirements the builder doesn't cover.
 
 ### Document Management
 
@@ -347,6 +375,17 @@ try {
   }
 }
 ```
+
+## Documentation
+
+For comprehensive documentation on Searchcraft, including:
+
+- **Query Language Reference** - Complete syntax and operators
+- **API Reference** - All endpoints and parameters
+- **Search Guides** - Best practices and advanced techniques
+- **Integration Examples** - Real-world use cases
+
+Visit the official documentation at **[docs.searchcraft.io](https://docs.searchcraft.io)**
 
 ## Development
 
