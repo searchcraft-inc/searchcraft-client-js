@@ -2,7 +2,7 @@
  * Basic search examples
  */
 
-import { createApiKey, createClient, createIndexName, exact, fuzzy } from '../src/index';
+import { createApiKey, createClient, createFederationName, createIndexName, exact, fuzzy } from '../src/index';
 
 // Initialize the client
 const client = createClient({
@@ -71,6 +71,20 @@ async function simpleQueryHelpers() {
   console.log('Results:', response.data.hits);
 }
 
+// Example 6: Federated search across multiple indices
+async function federatedSearch() {
+  const federation = createFederationName('your-federation');
+  const request = fuzzy().term('search term').limit(20).buildRequest();
+
+  const response = await client.search.searchFederation(federation, request);
+
+  console.log(`Found ${response.data.count} results across federation`);
+  for (const hit of response.data.hits) {
+    // source_index tells you which index each hit came from
+    console.log(`[${hit.source_index}] Score: ${hit.score}`, hit.doc);
+  }
+}
+
 // Run examples
 export async function main() {
   try {
@@ -79,6 +93,7 @@ export async function main() {
     await paginatedSearch();
     await sortedSearch();
     await simpleQueryHelpers();
+    await federatedSearch();
   } catch (error) {
     console.error('Error:', error);
   }
