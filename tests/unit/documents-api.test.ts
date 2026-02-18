@@ -19,7 +19,7 @@ describe('DocumentApi', () => {
     it('should insert a document', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true },
+        data: 'changes accepted. make sure to commit or rollback.',
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -55,7 +55,10 @@ describe('DocumentApi', () => {
     it('should delete a document by query', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true },
+        data: {
+          detail: 'deletion request accepted. make sure to commit or rollback.',
+          num_removed: 1,
+        },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -94,7 +97,7 @@ describe('DocumentApi', () => {
     it('should batch insert documents', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true, count: 2 },
+        data: 'changes accepted. make sure to commit or rollback.',
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -143,7 +146,10 @@ describe('DocumentApi', () => {
     it('should batch delete documents by field term match', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true, count: 2 },
+        data: {
+          detail: 'deletion request accepted. make sure to commit or rollback.',
+          num_removed: 2,
+        },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -177,7 +183,7 @@ describe('DocumentApi', () => {
     it('should delete all documents from an index', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true },
+        data: 'deletion request accepted. make sure to commit or rollback.',
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -199,11 +205,16 @@ describe('DocumentApi', () => {
   });
 
   describe('get', () => {
-    it('should get a document by internal ID', async () => {
-      const mockDocument = { id: '123', _id: 'internal-id', title: 'Test' };
+    it('should get a document by internal ID and return a SearchHit', async () => {
+      const mockHit = {
+        doc: { id: '123', title: 'Test' },
+        document_id: 'internal-id',
+        score: 1.0,
+        source_index: 'test-index',
+      };
       const mockResponse = {
         status: 200,
-        data: mockDocument,
+        data: mockHit,
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -213,7 +224,9 @@ describe('DocumentApi', () => {
 
       const result = await api.get(indexName, 'internal-id');
 
-      expect(result).toEqual(mockDocument);
+      expect(result).toEqual(mockHit);
+      expect(result.doc).toEqual({ id: '123', title: 'Test' });
+      expect(result.document_id).toBe('internal-id');
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',

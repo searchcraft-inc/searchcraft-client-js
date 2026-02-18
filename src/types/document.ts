@@ -2,8 +2,6 @@
  * Document management types
  */
 
-import type { DocumentId } from './common.js';
-
 /**
  * Base document structure
  */
@@ -45,29 +43,16 @@ export interface BatchDocumentOperation {
 }
 
 /**
- * Document operation response
+ * Response from insert operations (insert, batchInsert, deleteAll).
+ * The API returns a plain confirmation string.
  */
-export interface DocumentOperationResponse {
-  readonly status: number;
-  readonly data: {
-    readonly success: boolean;
-    readonly document_id?: DocumentId;
-    readonly message?: string;
-  };
-}
+export type DocumentOperationResponse = string;
 
 /**
- * Batch operation response
+ * Response from delete operations (delete, batchDelete).
+ * The API returns a detail message and the number of documents removed.
  */
-export interface BatchOperationResponse {
-  readonly status: number;
-  readonly data: {
-    readonly success: boolean;
-    readonly processed: number;
-    readonly failed: number;
-    readonly errors?: ReadonlyArray<{
-      readonly document_id?: string | number;
-      readonly error: string;
-    }>;
-  };
+export interface DocumentDeleteResponse {
+  readonly detail: string;
+  readonly num_removed: number;
 }

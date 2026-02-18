@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig, getApiKey, validateConfig } from '../../src/core/config';
-import { ConfigurationError } from '../../src/types/index';
-import { createApiKey } from '../../src/types/index';
+import { ConfigurationError, createApiKey } from '../../src/types/index';
 
 describe('config', () => {
   describe('validateConfig', () => {
@@ -132,6 +131,25 @@ describe('config', () => {
       });
 
       expect(() => getApiKey(config, 'write')).toThrow(ConfigurationError);
+    });
+
+    it('should return adminKey for admin operations', () => {
+      const config = createConfig({
+        endpointUrl: 'http://localhost:8000',
+        readKey: createApiKey('test-read-key'),
+        adminKey: createApiKey('test-admin-key'),
+      });
+
+      expect(getApiKey(config, 'admin')).toBe('test-admin-key');
+    });
+
+    it('should throw if adminKey is missing for admin operation', () => {
+      const config = createConfig({
+        endpointUrl: 'http://localhost:8000',
+        readKey: createApiKey('test-read-key'),
+      });
+
+      expect(() => getApiKey(config, 'admin')).toThrow(ConfigurationError);
     });
   });
 });

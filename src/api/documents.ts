@@ -5,10 +5,11 @@
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type {
-  BatchOperationResponse,
+  DocumentDeleteResponse,
   DocumentOperationResponse,
   DocumentWithId,
   IndexName,
+  SearchHit,
   SearchcraftConfig,
 } from '../types/index.js';
 import { ValidationError } from '../types/index.js';
@@ -52,10 +53,7 @@ export class DocumentApi {
    * Deletes a document from an index by its source ID
    * Uses DELETE /index/:index/documents/query with query body
    */
-  async delete(
-    indexName: IndexName,
-    documentId: string | number
-  ): Promise<DocumentOperationResponse> {
+  async delete(indexName: IndexName, documentId: string | number): Promise<DocumentDeleteResponse> {
     if (!documentId) {
       throw new ValidationError('Document ID is required', 'id');
     }
@@ -63,7 +61,7 @@ export class DocumentApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents/query`;
 
-    const response = await this.httpClient.request<DocumentOperationResponse>(
+    const response = await this.httpClient.request<DocumentDeleteResponse>(
       {
         method: 'DELETE',
         path,
@@ -90,7 +88,7 @@ export class DocumentApi {
   async batchInsert(
     indexName: IndexName,
     documents: ReadonlyArray<DocumentWithId>
-  ): Promise<BatchOperationResponse> {
+  ): Promise<DocumentOperationResponse> {
     if (documents.length === 0) {
       throw new ValidationError('Documents array cannot be empty', 'documents');
     }
@@ -105,7 +103,7 @@ export class DocumentApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents`;
 
-    const response = await this.httpClient.request<BatchOperationResponse>(
+    const response = await this.httpClient.request<DocumentOperationResponse>(
       {
         method: 'POST',
         path,
@@ -125,7 +123,7 @@ export class DocumentApi {
   async batchDelete(
     indexName: IndexName,
     documentIds: ReadonlyArray<string | number>
-  ): Promise<BatchOperationResponse> {
+  ): Promise<DocumentDeleteResponse> {
     if (documentIds.length === 0) {
       throw new ValidationError('Document IDs array cannot be empty', 'documentIds');
     }
@@ -134,7 +132,7 @@ export class DocumentApi {
     const path = `${this.config.endpointUrl}/index/${indexName}/documents`;
 
     // Delete by field term match for each ID
-    const response = await this.httpClient.request<BatchOperationResponse>(
+    const response = await this.httpClient.request<DocumentDeleteResponse>(
       {
         method: 'DELETE',
         path,
@@ -170,12 +168,13 @@ export class DocumentApi {
   /**
    * Get a document by its internal Searchcraft ID (_id)
    * Uses GET /index/:index/documents/:document_id
+   * Returns a SearchHit containing the document, its internal ID, score, and source index
    */
-  async get(indexName: IndexName, internalId: string): Promise<DocumentWithId> {
+  async get<T = unknown>(indexName: IndexName, internalId: string): Promise<SearchHit<T>> {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents/${internalId}`;
 
-    const response = await this.httpClient.request<DocumentWithId>(
+    const response = await this.httpClient.request<SearchHit<T>>(
       {
         method: 'GET',
         path,

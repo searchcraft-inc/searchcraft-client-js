@@ -53,14 +53,24 @@ export const createConfig = (config: SearchcraftConfig): Readonly<SearchcraftCon
  */
 export const getApiKey = (
   config: Readonly<SearchcraftConfig>,
-  operation: 'read' | 'write'
+  operation: 'read' | 'write' | 'admin'
 ): ApiKey => {
-  const key = operation === 'read' ? config.readKey : config.ingestKey;
+  let key: ApiKey | undefined;
+  let keyName: string;
+
+  if (operation === 'read') {
+    key = config.readKey;
+    keyName = 'readKey';
+  } else if (operation === 'write') {
+    key = config.ingestKey;
+    keyName = 'ingestKey';
+  } else {
+    key = config.adminKey;
+    keyName = 'adminKey';
+  }
 
   if (!key) {
-    throw new ConfigurationError(
-      `${operation === 'read' ? 'readKey' : 'ingestKey'} is required for this operation`
-    );
+    throw new ConfigurationError(`${keyName} is required for this operation`);
   }
 
   return key;
