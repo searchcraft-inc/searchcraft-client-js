@@ -32,6 +32,7 @@ A TypeScript client library for the <a href="https://searchcraft.io">Searchcraft
 - Functional, immutable API design.
 - Composable query builder.
 - Support for all Searchcraft query modes (fuzzy, exact, dynamic) and operations.
+- Full index, federation, synonyms, and stopwords management.
 - Complete query language support.
 - Works in both Node.js and browser environments.
 - Available via NPM and CDN.
@@ -259,6 +260,92 @@ await client.documents.batchInsert(indexName, [
 
 // Batch delete documents by their ids
 await client.documents.batchDelete(indexName, ['1', '2']);
+
+// Delete all documents from an index
+await client.documents.deleteAll(indexName);
+```
+
+### Index Management
+
+```typescript
+import { createIndexName } from '@searchcraft/client';
+
+const indexName = createIndexName('my-index');
+
+// List all index names
+const { index_names } = await client.indices.list();
+
+// Get index configuration
+const config = await client.indices.get(indexName);
+
+// Create a new index
+await client.indices.create(indexName, {
+  search_fields: ['title', 'body'],
+  fields: {
+    title: { type: 'text', indexed: true, stored: true },
+    body: { type: 'text', indexed: true, stored: true },
+  },
+});
+
+// Update index configuration (partial)
+await client.indices.update(indexName, {
+  weight_multipliers: { title: 2.0, body: 0.7 },
+});
+
+// Delete an index
+await client.indices.delete(indexName);
+```
+
+### Federation Management
+
+```typescript
+import { createFederationName } from '@searchcraft/client';
+
+const federationName = createFederationName('my-federation');
+
+// List all federations
+const federations = await client.federations.list();
+
+// Get a specific federation
+const federation = await client.federations.get(federationName);
+
+// Delete a federation
+await client.federations.delete(federationName);
+```
+
+### Synonyms
+
+```typescript
+// Get all synonyms for an index
+const synonyms = await client.synonyms.get(indexName);
+
+// Add synonyms — format: "synonym:original-term" or "many,synonyms:original,terms"
+await client.synonyms.add(indexName, [
+  'nyc:new york city',
+  'usa:united states',
+]);
+
+// Delete specific synonyms by key
+await client.synonyms.delete(indexName, ['nyc', 'usa']);
+
+// Delete all synonyms
+await client.synonyms.deleteAll(indexName);
+```
+
+### Stopwords
+
+```typescript
+// Get all stopwords for an index
+const stopwords = await client.stopwords.get(indexName);
+
+// Add custom stopwords
+await client.stopwords.add(indexName, ['foo', 'bar']);
+
+// Delete specific stopwords
+await client.stopwords.delete(indexName, ['foo', 'bar']);
+
+// Delete all custom stopwords
+await client.stopwords.deleteAll(indexName);
 ```
 
 ### Health Check
@@ -282,11 +369,39 @@ console.log('Healthy:', health.data.healthy);
 ### Document API
 
 - `insert(indexName: IndexName, document: DocumentWithId): Promise<DocumentOperationResponse>` - Insert a document
-- `delete(indexName: IndexName, documentId: string | number): Promise<DocumentOperationResponse>` - Delete a document by id
-- `batchInsert(indexName: IndexName, documents: DocumentWithId[]): Promise<BatchOperationResponse>` - Batch insert documents
-- `batchDelete(indexName: IndexName, documentIds: (string | number)[]): Promise<BatchOperationResponse>` - Batch delete documents by ids
+- `delete(indexName: IndexName, documentId: string | number): Promise<DocumentDeleteResponse>` - Delete a document by id
+- `batchInsert(indexName: IndexName, documents: DocumentWithId[]): Promise<DocumentOperationResponse>` - Batch insert documents
+- `batchDelete(indexName: IndexName, documentIds: (string | number)[]): Promise<DocumentDeleteResponse>` - Batch delete documents by ids
 - `deleteAll(indexName: IndexName): Promise<DocumentOperationResponse>` - Delete all documents from an index
-- `get(indexName: IndexName, internalId: string): Promise<DocumentWithId>` - Get a document by its internal Searchcraft ID (_id)
+- `get<T>(indexName: IndexName, internalId: string): Promise<SearchHit<T>>` - Get a document by its internal Searchcraft ID (_id)
+
+### Index API
+
+- `list(): Promise<IndexListResponse>` - List all index names
+- `get(indexName: IndexName): Promise<IndexConfig>` - Get the configuration for a specific index
+- `create(indexName: IndexName, indexConfig: IndexConfig): Promise<IndexOperationResponse>` - Create a new index
+- `update(indexName: IndexName, indexConfig: Partial<IndexConfig>): Promise<IndexOperationResponse>` - Update an existing index (partial)
+- `delete(indexName: IndexName): Promise<IndexOperationResponse>` - Delete an index
+
+### Federation API
+
+- `list(): Promise<Federation[]>` - List all federations
+- `get(federationName: FederationName): Promise<Federation>` - Get a specific federation
+- `delete(federationName: FederationName): Promise<FederationOperationResponse>` - Delete a federation
+
+### Synonyms API
+
+- `get(indexName: IndexName): Promise<SynonymsMap>` - Get all synonyms for an index
+- `add(indexName: IndexName, synonyms: string[]): Promise<SynonymOperationResponse>` - Add synonyms in `"synonym:original-term"` format
+- `delete(indexName: IndexName, synonyms: string[]): Promise<SynonymOperationResponse>` - Delete specific synonyms by key
+- `deleteAll(indexName: IndexName): Promise<SynonymOperationResponse>` - Delete all synonyms from an index
+
+### Stopwords API
+
+- `get(indexName: IndexName): Promise<string[]>` - Get all stopwords for an index
+- `add(indexName: IndexName, stopwords: string[]): Promise<StopwordOperationResponse>` - Add custom stopwords
+- `delete(indexName: IndexName, stopwords: string[]): Promise<StopwordOperationResponse>` - Delete specific stopwords
+- `deleteAll(indexName: IndexName): Promise<StopwordOperationResponse>` - Delete all stopwords from an index
 
 ### Health API
 
