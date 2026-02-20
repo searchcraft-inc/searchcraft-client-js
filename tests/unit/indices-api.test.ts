@@ -20,7 +20,7 @@ describe('IndexApi', () => {
       const mockData = { index_names: ['index_a', 'index_b'] };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 
@@ -40,7 +40,7 @@ describe('IndexApi', () => {
       const mockData = { search_fields: ['title'], fields: {}, weight_multipliers: {} };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 
@@ -60,7 +60,7 @@ describe('IndexApi', () => {
     it('should create an index with given configuration and inject name into body', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'index created',
+        data: { status: 200, data: 'index created' },
         headers: {},
       });
 
@@ -86,7 +86,7 @@ describe('IndexApi', () => {
     it('should update an index with partial configuration', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'index updated',
+        data: { status: 200, data: 'index updated' },
         headers: {},
       });
 
@@ -110,7 +110,7 @@ describe('IndexApi', () => {
     it('should accept an empty object as partial config', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'index updated',
+        data: { status: 200, data: 'index updated' },
         headers: {},
       });
 
@@ -131,7 +131,7 @@ describe('IndexApi', () => {
     it('should delete an index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'index deleted',
+        data: { status: 200, data: 'index deleted' },
         headers: {},
       });
 
@@ -154,14 +154,16 @@ describe('IndexApi', () => {
   describe('getStats', () => {
     it('should get stats for all indices', async () => {
       const mockData = {
+        index_count: 2,
         indices: [
-          { index_name: 'index_a', num_docs: 100, space_usage: 2048 },
-          { index_name: 'index_b', num_docs: 250, space_usage: 4096 },
+          { index_a: { document_count: 100 } },
+          { index_b: { document_count: 250 } },
         ],
+        total_document_count: 350,
       };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 
@@ -178,10 +180,10 @@ describe('IndexApi', () => {
 
   describe('getIndexStats', () => {
     it('should get stats for a specific index', async () => {
-      const mockData = { index_name: 'test-index', num_docs: 100, space_usage: 2048 };
+      const mockData = { document_count: 100 };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 

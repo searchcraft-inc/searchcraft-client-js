@@ -6,6 +6,7 @@ import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type {
   AllIndexStatsResponse,
+  ApiResponse,
   IndexConfig,
   IndexListResponse,
   IndexName,
@@ -31,12 +32,12 @@ export class IndexApi {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/index`;
 
-    const response = await this.httpClient.request<IndexListResponse>(
+    const response = await this.httpClient.request<ApiResponse<IndexListResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -47,12 +48,12 @@ export class IndexApi {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
-    const response = await this.httpClient.request<IndexConfig>(
+    const response = await this.httpClient.request<ApiResponse<IndexConfig>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -64,7 +65,7 @@ export class IndexApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
-    const response = await this.httpClient.request<IndexOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(
       {
         method: 'PUT',
         path,
@@ -74,7 +75,7 @@ export class IndexApi {
       apiKey
     );
 
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -88,7 +89,7 @@ export class IndexApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
-    const response = await this.httpClient.request<IndexOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(
       {
         method: 'PATCH',
         path,
@@ -98,7 +99,7 @@ export class IndexApi {
       apiKey
     );
 
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -109,12 +110,12 @@ export class IndexApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
-    const response = await this.httpClient.request<IndexOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(
       { method: 'DELETE', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -125,12 +126,12 @@ export class IndexApi {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/index/stats`;
 
-    const response = await this.httpClient.request<AllIndexStatsResponse>(
+    const response = await this.httpClient.request<ApiResponse<AllIndexStatsResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -141,11 +142,11 @@ export class IndexApi {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/index/${indexName}/stats`;
 
-    const response = await this.httpClient.request<IndexStats>(
+    const response = await this.httpClient.request<ApiResponse<IndexStats>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return response.data.data;
   }
 }

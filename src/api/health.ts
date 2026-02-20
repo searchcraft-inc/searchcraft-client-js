@@ -8,11 +8,12 @@ import type { SearchcraftConfig } from '../types/index.js';
 
 /**
  * Health check response data
+ * The Searchcraft healthcheck endpoint returns { status: number, data: string }.
+ * If this method returns without throwing, the service is reachable and healthy.
  */
 export interface HealthCheckData {
-  readonly healthy: boolean;
-  readonly version?: string;
-  readonly uptime?: number;
+  readonly status: number;
+  readonly data: string;
 }
 
 /**

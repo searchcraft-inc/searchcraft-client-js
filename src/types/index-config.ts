@@ -65,16 +65,25 @@ export type StopwordOperationResponse = string;
 
 /**
  * Statistics for a single index, as returned by GET /index/:index_name/stats
+ * Wire format: { "document_count": number }
  */
 export interface IndexStats {
-  readonly index_name: string;
-  readonly num_docs: number;
-  readonly space_usage: number;
+  readonly document_count: number;
 }
 
 /**
+ * A single entry in the all-indices stats array.
+ * Each object has the index name as key mapping to its stats.
+ * Example: { "my_index": { "document_count": 1234 } }
+ */
+export type IndexStatsEntry = Record<string, IndexStats>;
+
+/**
  * Response from GET /index/stats listing stats for all indices
+ * Wire format: { "index_count": number, "indices": IndexStatsEntry[], "total_document_count": number }
  */
 export interface AllIndexStatsResponse {
-  readonly indices: IndexStats[];
+  readonly index_count: number;
+  readonly indices: IndexStatsEntry[];
+  readonly total_document_count: number;
 }

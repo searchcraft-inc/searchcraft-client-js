@@ -17,9 +17,8 @@ describe('HealthApi', () => {
   describe('check', () => {
     it('should perform a health check', async () => {
       const mockData = {
-        healthy: true,
-        version: '1.0.0',
-        uptime: 12345,
+        status: 200,
+        data: 'Searchcraft is healthy.',
       };
 
       const mockResponse = {

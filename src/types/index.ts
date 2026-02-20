@@ -77,6 +77,7 @@ export type {
     IndexListResponse,
     IndexOperationResponse,
     IndexStats,
+    IndexStatsEntry,
     StopwordOperationResponse,
     SynonymOperationResponse,
     SynonymsMap
