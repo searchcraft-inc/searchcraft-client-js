@@ -29,7 +29,7 @@ A TypeScript client library for the <a href="https://searchcraft.io">Searchcraft
 ## Features
 
 - Full TypeScript support with comprehensive type definitions.
-- Works for JavaScript projects as well.
+- Works with JavaScript projects as well.
 - Functional, immutable API design.
 - Composable query builder.
 - Support for all Searchcraft query modes (fuzzy, exact, dynamic) and operations.
