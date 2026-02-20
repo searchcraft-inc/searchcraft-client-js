@@ -1,0 +1,155 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "en-US"
+
+reviews:
+  profile: "chill"
+  poem: false
+  high_level_summary: true
+  collapse_walkthrough: false
+  request_changes_workflow: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "development"
+
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+      - "DRAFT"
+      - "Version"
+      - "version"
+      - "Release"
+      - "release"
+
+  path_filters:
+    - "!dist/**"
+    - "!coverage/**"
+    - "!node_modules/**"
+    - "!examples/**"
+
+  path_instructions:
+    - path: "src/api/**/*.ts"
+      instructions: >
+        Review for:
+        consistent error handling using the typed error classes (ApiError,
+        AuthenticationError, NetworkError, NotFoundError, ValidationError);
+        correct API key selection via getApiKey() with the right operation type
+        ('read', 'write', or 'admin'); no direct use of fetch — always go through
+        the HttpClient abstraction; all public methods documented with JSDoc/TSDoc;
+        response types use the defined TypeScript interfaces, never `any`.
+
+    - path: "src/types/**/*.ts"
+      instructions: >
+        Review for:
+        readonly modifiers on all interface properties where appropriate;
+        no use of `any` — prefer `unknown` with type narrowing;
+        backwards-compatible changes only (flag removals or signature changes as
+        potential breaking changes); branded types (ApiKey, IndexName,
+        FederationName, DocumentId) used for opaque string identifiers;
+        prefer `interface` for extensible shapes and `type` for unions/intersections.
+
+    - path: "src/core/**/*.ts"
+      instructions: >
+        Review for:
+        ConfigurationError thrown with clear messages for every invalid config case;
+        HTTP client correctly handles timeouts, network failures, and non-2xx responses;
+        API keys must never be logged or exposed in error messages;
+        config objects remain frozen/immutable after creation.
+
+    - path: "src/utils/**/*.ts"
+      instructions: >
+        Review for:
+        query builder methods return `this` for fluent chaining;
+        ValidationError thrown with descriptive messages for invalid inputs;
+        pure functions without hidden mutable state preferred.
+
+    - path: "tests/**/*.ts"
+      instructions: >
+        Review for:
+        Vitest APIs only (describe, it, expect, vi.fn(), vi.spyOn() — no Jest imports);
+        each public method has at least one happy-path and one error-path test;
+        mocks are properly typed (avoid `any` in vi.fn() generics);
+        integration tests in tests/integration/ include comments explaining
+        required external setup; test descriptions state expected behaviour,
+        not implementation details.
+
+  labeling_instructions:
+    - label: "breaking-change"
+      instructions: >
+        Apply when the PR modifies a public API signature, removes exported symbols,
+        or changes documented behaviour in a way that requires consumers to update
+        their code (e.g., changes to src/index.ts exports or type signatures).
+    - label: "new-api"
+      instructions: >
+        Apply when the PR introduces new exported classes, functions, types, or
+        methods visible from src/index.ts.
+    - label: "types"
+      instructions: "Apply when the PR primarily changes TypeScript type definitions under src/types/."
+    - label: "bug"
+      instructions: "Apply when the PR fixes incorrect behaviour in an existing feature."
+    - label: "enhancement"
+      instructions: "Apply when the PR improves existing functionality without breaking changes."
+    - label: "documentation"
+      instructions: "Apply when the PR updates README, CONTRIBUTING, examples, or JSDoc comments."
+    - label: "tests"
+      instructions: "Apply when the PR adds or modifies tests without changing production source code."
+    - label: "chore"
+      instructions: "Apply when the PR makes build, tooling, dependency, or CI configuration changes."
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+
+  pre_merge_checks:
+    custom_checks:
+      - name: "No untyped `any` in src/"
+        instructions: >
+          Fail if the PR introduces new uses of the TypeScript `any` type in files
+          under src/ without an inline comment explaining why it is unavoidable.
+      - name: "Public API exports documented"
+        instructions: >
+          Fail if the PR adds or modifies exported symbols in src/index.ts without
+          corresponding JSDoc/TSDoc documentation on those symbols.
+
+  tools:
+    biome:
+      enabled: true
+    eslint:
+      enabled: false
+    gitleaks:
+      enabled: true
+    trufflehog:
+      enabled: true
+    markdownlint:
+      enabled: true
+    ast-grep:
+      essential_rules: true
+
+chat:
+  auto_reply: true
+
+code_generation:
+  docstrings:
+    language: "en-US"
+    path_instructions:
+      - path: "src/**/*.ts"
+        instructions: >
+          Use TSDoc-style comments with @param, @returns, @throws, and @example tags.
+          Keep descriptions concise and focused on observable behaviour, not internals.
+          For @throws, list every named error class that the method can raise.
+  unit_tests:
+    path_instructions:
+      - path: "src/**/*.ts"
+        instructions: >
+          Generate Vitest tests using describe, it, expect, and vi.fn().
+          Place generated test files in tests/unit/ mirroring the src/ path
+          (e.g., src/api/search.ts → tests/unit/search-api.test.ts).
+          Mock HTTP responses by passing a vi.fn() implementation of HttpClient.
+          Include at minimum: one success path test and one error path test per
+          public method.
+

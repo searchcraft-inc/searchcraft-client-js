@@ -3,10 +3,9 @@ import { createHttpClient } from '../../src/core/http';
 import {
   ApiError,
   AuthenticationError,
+  createApiKey,
   NetworkError,
   NotFoundError,
-  ValidationError,
-  createApiKey,
 } from '../../src/types/index';
 
 // Mock fetch
@@ -236,6 +235,18 @@ describe('HttpClient', () => {
           createApiKey('test-key')
         )
       ).rejects.toThrow(NetworkError);
+    });
+
+    it('should throw NetworkError with unknown message when a non-Error value is thrown', async () => {
+      mockFetch.mockRejectedValueOnce('raw string error');
+
+      const client = createHttpClient();
+      const error = await client
+        .request({ method: 'GET', path: 'http://localhost:8000/test' }, createApiKey('test-key'))
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(NetworkError);
+      expect(error.message).toBe('Unknown error occurred');
     });
 
     it('should extract error message from response', async () => {

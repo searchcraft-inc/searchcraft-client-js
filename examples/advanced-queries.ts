@@ -2,6 +2,7 @@
  * Advanced query examples
  */
 
+import type { SearchRequest } from '../src/index';
 import { createApiKey, createClient, createIndexName, exact, fuzzy } from '../src/index';
 
 const client = createClient({
@@ -116,12 +117,14 @@ async function complexQuery() {
 
 // Example 9: Combining fuzzy search with exact filters
 async function hybridQuery() {
-  // This requires using the array query format
-  const request = {
+  // Use the array query format to mix exact filters with a fuzzy term search.
+  // Each clause needs an `occur` value ('must' | 'should') and `as const` so
+  // TypeScript narrows the literal to OccurMode instead of plain string.
+  const request: SearchRequest = {
     query: [
-      { occur: 'must', exact: { ctx: 'active:true' } },
-      { occur: 'must', exact: { ctx: 'category:/electronics' } },
-      { fuzzy: { ctx: 'wireless headphones' } },
+      { occur: 'must' as const, exact: { ctx: 'active:true' } },
+      { occur: 'must' as const, exact: { ctx: 'category:/electronics' } },
+      { occur: 'should' as const, fuzzy: { ctx: 'wireless headphones' } },
     ],
     limit: 20,
   };

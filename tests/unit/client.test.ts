@@ -12,6 +12,13 @@ describe('SearchcraftClient', () => {
     expect(client.search).toBeDefined();
     expect(client.documents).toBeDefined();
     expect(client.health).toBeDefined();
+    expect(client.indices).toBeDefined();
+    expect(client.federations).toBeDefined();
+    expect(client.synonyms).toBeDefined();
+    expect(client.stopwords).toBeDefined();
+    expect(client.transactions).toBeDefined();
+    expect(client.measure).toBeDefined();
+    expect(client.auth).toBeDefined();
   });
 
   it('should create a client with both read and ingest keys', () => {
@@ -61,5 +68,16 @@ describe('SearchcraftClient', () => {
     });
 
     expect(client.httpClient).toBeDefined();
+  });
+
+  it('should return frozen config via getConfig()', () => {
+    const client = createClient({
+      endpointUrl: 'http://localhost:8000',
+      readKey: createApiKey('test-read-key'),
+    });
+
+    const config = client.getConfig();
+    expect(config).toBeDefined();
+    expect(config.endpointUrl).toBe('http://localhost:8000');
   });
 });

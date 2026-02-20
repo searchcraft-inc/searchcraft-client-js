@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DocumentApi } from '../../src/api/documents';
 import type { HttpClient } from '../../src/core/http';
-import { ValidationError, createApiKey, createIndexName } from '../../src/types/index';
+import { createApiKey, createIndexName, ValidationError } from '../../src/types/index';
 
 describe('DocumentApi', () => {
   const mockConfig = {
@@ -15,11 +15,11 @@ describe('DocumentApi', () => {
     request: vi.fn(),
   };
 
-  describe('upsert', () => {
+  describe('insert', () => {
     it('should insert a document', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true },
+        data: 'changes accepted. make sure to commit or rollback.',
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -28,7 +28,7 @@ describe('DocumentApi', () => {
       const indexName = createIndexName('test-index');
       const document = { id: '123', title: 'Test' };
 
-      const result = await api.upsert(indexName, document);
+      const result = await api.insert(indexName, document);
 
       expect(result).toEqual(mockResponse.data);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
@@ -47,7 +47,7 @@ describe('DocumentApi', () => {
       // Intentionally create an invalid document without id to test validation
       const document = { title: 'Test' } as unknown as DocumentWithId;
 
-      await expect(api.upsert(indexName, document)).rejects.toThrow(ValidationError);
+      await expect(api.insert(indexName, document)).rejects.toThrow(ValidationError);
     });
   });
 
@@ -55,7 +55,10 @@ describe('DocumentApi', () => {
     it('should delete a document by query', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true },
+        data: {
+          detail: 'deletion request accepted. make sure to commit or rollback.',
+          num_removed: 1,
+        },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -90,11 +93,11 @@ describe('DocumentApi', () => {
     });
   });
 
-  describe('batchUpsert', () => {
+  describe('batchInsert', () => {
     it('should batch insert documents', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true, count: 2 },
+        data: 'changes accepted. make sure to commit or rollback.',
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -106,7 +109,7 @@ describe('DocumentApi', () => {
         { id: '2', title: 'Test 2' },
       ];
 
-      const result = await api.batchUpsert(indexName, documents);
+      const result = await api.batchInsert(indexName, documents);
 
       expect(result).toEqual(mockResponse.data);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
@@ -123,7 +126,7 @@ describe('DocumentApi', () => {
       const api = new DocumentApi(mockConfig, mockHttpClient);
       const indexName = createIndexName('test-index');
 
-      await expect(api.batchUpsert(indexName, [])).rejects.toThrow(ValidationError);
+      await expect(api.batchInsert(indexName, [])).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError if any document has no id', async () => {
@@ -135,7 +138,7 @@ describe('DocumentApi', () => {
         { title: 'Test 2' },
       ] as unknown as ReadonlyArray<DocumentWithId>;
 
-      await expect(api.batchUpsert(indexName, documents)).rejects.toThrow(ValidationError);
+      await expect(api.batchInsert(indexName, documents)).rejects.toThrow(ValidationError);
     });
   });
 
@@ -143,7 +146,10 @@ describe('DocumentApi', () => {
     it('should batch delete documents by field term match', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true, count: 2 },
+        data: {
+          detail: 'deletion request accepted. make sure to commit or rollback.',
+          num_removed: 2,
+        },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -177,7 +183,7 @@ describe('DocumentApi', () => {
     it('should delete all documents from an index', async () => {
       const mockResponse = {
         status: 200,
-        data: { success: true },
+        data: 'deletion request accepted. make sure to commit or rollback.',
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -199,11 +205,16 @@ describe('DocumentApi', () => {
   });
 
   describe('get', () => {
-    it('should get a document by internal ID', async () => {
-      const mockDocument = { id: '123', _id: 'internal-id', title: 'Test' };
+    it('should get a document by internal ID and return a SearchHit', async () => {
+      const mockHit = {
+        doc: { id: '123', title: 'Test' },
+        document_id: 'internal-id',
+        score: 1.0,
+        source_index: 'test-index',
+      };
       const mockResponse = {
         status: 200,
-        data: mockDocument,
+        data: mockHit,
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -213,7 +224,9 @@ describe('DocumentApi', () => {
 
       const result = await api.get(indexName, 'internal-id');
 
-      expect(result).toEqual(mockDocument);
+      expect(result).toEqual(mockHit);
+      expect(result.doc).toEqual({ id: '123', title: 'Test' });
+      expect(result.document_id).toBe('internal-id');
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',

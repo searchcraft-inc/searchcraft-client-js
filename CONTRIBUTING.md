@@ -77,7 +77,7 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/search
 When contributing to this project, you must agree that you have authored 100% of the content, that you have the necessary rights to the content and that the content you contribute may be provided under the project license. Our bot will ask you to accept the [Contributor License Agreement](./CLA.md) before we can accept the pull request.
 
 Basic rules for pull requests:
-- Pull requests generally need to be based on and opened against the `develop` branch, unless by explicit agreement.
+- Pull requests generally need to be based on and opened against the `development` branch, unless by explicit agreement.
 - Please follow our suggested template for the pull request description.
 - Major functionality changes should be proposed through issue discussion prior to contribution.
 

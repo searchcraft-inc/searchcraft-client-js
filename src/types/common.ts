@@ -74,6 +74,8 @@ export interface SearchcraftConfig {
   readonly endpointUrl: string;
   readonly readKey?: ApiKey;
   readonly ingestKey?: ApiKey;
+  /** Admin key required for authentication management endpoints (self-hosted only) */
+  readonly adminKey?: ApiKey;
   readonly timeout?: number;
   readonly headers?: Readonly<Record<string, string>>;
 }

@@ -7,9 +7,9 @@ import type { HttpClient } from '../core/http.js';
 import type {
   FederationName,
   IndexName,
+  SearchcraftConfig,
   SearchRequest,
   SearchResponse,
-  SearchcraftConfig,
 } from '../types/index.js';
 import { validateLimit, validateOffset } from '../utils/validators.js';
 
@@ -23,7 +23,18 @@ export class SearchApi {
   ) {}
 
   /**
-   * Performs a search on a specific index
+   * Performs a search on a specific index.
+   * @param indexName - The name of the index to search.
+   * @param request - The search request parameters including query, filters, limit, and offset.
+   * @returns A promise resolving to the search response containing hits and metadata.
+   * @throws {ValidationError} When `limit` exceeds 200 or `offset` is negative.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   * @example
+   * const results = await client.search.searchIndex('products', { query: 'laptop', limit: 10 });
    */
   async searchIndex<T = unknown>(
     indexName: IndexName,
@@ -54,7 +65,18 @@ export class SearchApi {
   }
 
   /**
-   * Performs a federated search across multiple indices
+   * Performs a federated search across multiple indices grouped under a federation.
+   * @param federationName - The name of the federation to search.
+   * @param request - The search request parameters including query, filters, limit, and offset.
+   * @returns A promise resolving to the search response containing hits and metadata.
+   * @throws {ValidationError} When `limit` exceeds 200 or `offset` is negative.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {NotFoundError} When the specified federation does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   * @example
+   * const results = await client.search.searchFederation('global', { query: 'laptop', limit: 10 });
    */
   async searchFederation<T = unknown>(
     federationName: FederationName,
