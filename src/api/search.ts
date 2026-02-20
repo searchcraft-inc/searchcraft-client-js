@@ -7,9 +7,9 @@ import type { HttpClient } from '../core/http.js';
 import type {
   FederationName,
   IndexName,
+  SearchcraftConfig,
   SearchRequest,
   SearchResponse,
-  SearchcraftConfig,
 } from '../types/index.js';
 import { validateLimit, validateOffset } from '../utils/validators.js';
 

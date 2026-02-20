@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AuthApi } from '../../src/api/auth';
 import type { HttpClient } from '../../src/core/http';
-import { createApiKey, createFederationName } from '../../src/types/index';
 import type { AuthKey, CreateAuthKeyRequest, UpdateAuthKeyRequest } from '../../src/types/index';
+import { createApiKey, createFederationName } from '../../src/types/index';
 
 describe('AuthApi', () => {
   const mockConfig = {

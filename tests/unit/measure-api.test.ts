@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MeasureApi } from '../../src/api/measure';
 import type { HttpClient } from '../../src/core/http';
-import { createApiKey } from '../../src/types/index';
 import type { MeasureRequest } from '../../src/types/index';
+import { createApiKey } from '../../src/types/index';
 
 describe('MeasureApi', () => {
   const mockConfig = {

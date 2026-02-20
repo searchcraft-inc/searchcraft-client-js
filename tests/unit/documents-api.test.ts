@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DocumentApi } from '../../src/api/documents';
 import type { HttpClient } from '../../src/core/http';
-import { ValidationError, createApiKey, createIndexName } from '../../src/types/index';
+import { createApiKey, createIndexName, ValidationError } from '../../src/types/index';
 
 describe('DocumentApi', () => {
   const mockConfig = {

@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
-  type DocumentWithId,
   createApiKey,
   createClient,
   createIndexName,
+  type DocumentWithId,
   exact,
   fuzzy,
 } from '../../src/index';

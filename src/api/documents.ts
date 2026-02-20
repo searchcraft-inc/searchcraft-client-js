@@ -9,8 +9,8 @@ import type {
   DocumentOperationResponse,
   DocumentWithId,
   IndexName,
-  SearchHit,
   SearchcraftConfig,
+  SearchHit,
 } from '../types/index.js';
 import { ValidationError } from '../types/index.js';
 

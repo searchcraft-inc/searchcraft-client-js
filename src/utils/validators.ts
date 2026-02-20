@@ -76,7 +76,7 @@ export const validateOffset = (offset: number): number => {
  * @returns The escaped string safe to use in a Searchcraft query.
  */
 export const escapeSpecialChars = (value: string): string => {
-  const specialChars = /[+,^`:{}"\[\]()~!\\* ]/g;
+  const specialChars = /[+,^`:{}"[\]()~!\\* ]/g;
   return value.replace(specialChars, '\\$&');
 };
 

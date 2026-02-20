@@ -3,9 +3,19 @@
  * Main entry point
  */
 
+// Export API classes for direct use or extension
+export { AuthApi } from './api/auth.js';
+export { FederationApi } from './api/federations.js';
+export { IndexApi } from './api/indices.js';
+export { MeasureApi } from './api/measure.js';
+export { StopwordsApi } from './api/stopwords.js';
+export { SynonymsApi } from './api/synonyms.js';
+export { TransactionApi } from './api/transactions.js';
 // Export main client
 export { createClient, SearchcraftClient } from './core/client.js';
-
+export type { HttpClient } from './core/http.js';
+// Export HTTP client interface for custom implementations
+export { createHttpClient } from './core/http.js';
 // Export types
 export type {
   AllIndexStatsResponse,
@@ -63,26 +73,21 @@ export type {
   SynonymsMap,
   UpdateAuthKeyRequest,
 } from './types/index.js';
-
 // Export branded type creators
-export {
-  createApiKey,
-  createDocumentId,
-  createFederationName,
-  createIndexName,
-} from './types/index.js';
-
 // Export errors
 export {
   ApiError,
   AuthenticationError,
   ConfigurationError,
+  createApiKey,
+  createDocumentId,
+  createFederationName,
+  createIndexName,
   NetworkError,
   NotFoundError,
   SearchcraftError,
   ValidationError,
 } from './types/index.js';
-
 // Export query builder
 export {
   createDynamicQuery,
@@ -93,16 +98,3 @@ export {
   fuzzy,
   QueryBuilder,
 } from './utils/query-builder.js';
-
-// Export HTTP client interface for custom implementations
-export { createHttpClient } from './core/http.js';
-export type { HttpClient } from './core/http.js';
-
-// Export API classes for direct use or extension
-export { AuthApi } from './api/auth.js';
-export { FederationApi } from './api/federations.js';
-export { IndexApi } from './api/indices.js';
-export { MeasureApi } from './api/measure.js';
-export { StopwordsApi } from './api/stopwords.js';
-export { SynonymsApi } from './api/synonyms.js';
-export { TransactionApi } from './api/transactions.js';

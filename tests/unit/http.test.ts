@@ -3,10 +3,9 @@ import { createHttpClient } from '../../src/core/http';
 import {
   ApiError,
   AuthenticationError,
+  createApiKey,
   NetworkError,
   NotFoundError,
-  ValidationError,
-  createApiKey,
 } from '../../src/types/index';
 
 // Mock fetch
