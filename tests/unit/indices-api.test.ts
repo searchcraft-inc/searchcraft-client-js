@@ -155,10 +155,7 @@ describe('IndexApi', () => {
     it('should get stats for all indices', async () => {
       const mockData = {
         index_count: 2,
-        indices: [
-          { index_a: { document_count: 100 } },
-          { index_b: { document_count: 250 } },
-        ],
+        indices: [{ index_a: { document_count: 100 } }, { index_b: { document_count: 250 } }],
         total_document_count: 350,
       };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({

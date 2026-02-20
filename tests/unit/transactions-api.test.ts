@@ -47,10 +47,7 @@ describe('TransactionApi', () => {
       const api = new TransactionApi(mockConfig, mockHttpClient);
       await api.commit(createIndexName('my-index'));
 
-      expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.anything(),
-        'test-ingest-key'
-      );
+      expect(mockHttpClient.request).toHaveBeenCalledWith(expect.anything(), 'test-ingest-key');
     });
   });
 
@@ -86,11 +83,7 @@ describe('TransactionApi', () => {
       const api = new TransactionApi(mockConfig, mockHttpClient);
       await api.rollback(createIndexName('my-index'));
 
-      expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.anything(),
-        'test-ingest-key'
-      );
+      expect(mockHttpClient.request).toHaveBeenCalledWith(expect.anything(), 'test-ingest-key');
     });
   });
 });
-

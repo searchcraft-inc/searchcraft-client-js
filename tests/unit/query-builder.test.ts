@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-    QueryBuilder,
-    createDynamicQuery,
-    createExactQuery,
-    createFuzzyQuery,
-    dynamic,
-    exact,
-    fuzzy,
+  QueryBuilder,
+  createDynamicQuery,
+  createExactQuery,
+  createFuzzyQuery,
+  dynamic,
+  exact,
+  fuzzy,
 } from '../../src/utils/query-builder';
 
 describe('QueryBuilder', () => {

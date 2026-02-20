@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHttpClient } from '../../src/core/http';
 import {
-    ApiError,
-    AuthenticationError,
-    NetworkError,
-    NotFoundError,
-    ValidationError,
-    createApiKey,
+  ApiError,
+  AuthenticationError,
+  NetworkError,
+  NotFoundError,
+  ValidationError,
+  createApiKey,
 } from '../../src/types/index';
 
 // Mock fetch

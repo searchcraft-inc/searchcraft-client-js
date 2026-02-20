@@ -59,4 +59,3 @@ export type UpdateAuthKeyRequest = Partial<CreateAuthKeyRequest>;
  * Response containing a list of authentication keys
  */
 export type AuthKeyListResponse = AuthKey[];
-

@@ -9,10 +9,10 @@
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type {
-    MeasureDashboardSummary,
-    MeasureOperationResponse,
-    MeasureRequest,
-    SearchcraftConfig,
+  MeasureDashboardSummary,
+  MeasureOperationResponse,
+  MeasureRequest,
+  SearchcraftConfig,
 } from '../types/index.js';
 
 /**
@@ -89,4 +89,3 @@ export class MeasureApi {
     return response.data;
   }
 }
-

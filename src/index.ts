@@ -15,7 +15,8 @@ export type {
   AuthKey,
   AuthKeyListResponse,
   AuthKeyPermission,
-  AuthKeyStatus, CreateAuthKeyRequest,
+  AuthKeyStatus,
+  CreateAuthKeyRequest,
   // Document types
   Document,
   DocumentDeleteResponse,
@@ -32,7 +33,8 @@ export type {
   FederationStats,
   FieldConfig,
   // Index configuration types
-  FieldType, IndexConfig,
+  FieldType,
+  IndexConfig,
   IndexListResponse,
   IndexName,
   IndexOperationResponse,
@@ -58,7 +60,8 @@ export type {
   SortDirection,
   StopwordOperationResponse,
   SynonymOperationResponse,
-  SynonymsMap, UpdateAuthKeyRequest
+  SynonymsMap,
+  UpdateAuthKeyRequest,
 } from './types/index.js';
 
 // Export branded type creators
@@ -66,7 +69,7 @@ export {
   createApiKey,
   createDocumentId,
   createFederationName,
-  createIndexName
+  createIndexName,
 } from './types/index.js';
 
 // Export errors
@@ -77,7 +80,7 @@ export {
   NetworkError,
   NotFoundError,
   SearchcraftError,
-  ValidationError
+  ValidationError,
 } from './types/index.js';
 
 // Export query builder
@@ -88,7 +91,7 @@ export {
   dynamic,
   exact,
   fuzzy,
-  QueryBuilder
+  QueryBuilder,
 } from './utils/query-builder.js';
 
 // Export HTTP client interface for custom implementations
@@ -103,4 +106,3 @@ export { MeasureApi } from './api/measure.js';
 export { StopwordsApi } from './api/stopwords.js';
 export { SynonymsApi } from './api/synonyms.js';
 export { TransactionApi } from './api/transactions.js';
-

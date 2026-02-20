@@ -82,7 +82,11 @@ describe('AuthApi', () => {
 
       expect(result).toEqual(sampleAuthKey);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'POST', path: 'http://localhost:8000/auth/key', body: request }),
+        expect.objectContaining({
+          method: 'POST',
+          path: 'http://localhost:8000/auth/key',
+          body: request,
+        }),
         'test-admin-key'
       );
     });
@@ -101,7 +105,11 @@ describe('AuthApi', () => {
       await api.updateKey('abc123', request);
 
       expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'POST', path: 'http://localhost:8000/auth/key/abc123', body: request }),
+        expect.objectContaining({
+          method: 'POST',
+          path: 'http://localhost:8000/auth/key/abc123',
+          body: request,
+        }),
         'test-admin-key'
       );
     });
@@ -109,14 +117,21 @@ describe('AuthApi', () => {
 
   describe('deleteKey', () => {
     it('should delete a key using DELETE /auth/key/:key with admin key', async () => {
-      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({ status: 200, data: 'key deleted', headers: {} });
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: 'key deleted',
+        headers: {},
+      });
 
       const api = new AuthApi(mockConfig, mockHttpClient);
       const result = await api.deleteKey('abc123');
 
       expect(result).toBe('key deleted');
       expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'DELETE', path: 'http://localhost:8000/auth/key/abc123' }),
+        expect.objectContaining({
+          method: 'DELETE',
+          path: 'http://localhost:8000/auth/key/abc123',
+        }),
         'test-admin-key'
       );
     });
@@ -124,7 +139,11 @@ describe('AuthApi', () => {
 
   describe('deleteAllKeys', () => {
     it('should delete all keys using DELETE /auth/key with admin key', async () => {
-      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({ status: 200, data: 'all keys deleted', headers: {} });
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: 'all keys deleted',
+        headers: {},
+      });
 
       const api = new AuthApi(mockConfig, mockHttpClient);
       const result = await api.deleteAllKeys();
@@ -139,14 +158,21 @@ describe('AuthApi', () => {
 
   describe('listApplicationKeys', () => {
     it('should list application keys using GET /auth/application/:id with admin key', async () => {
-      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({ status: 200, data: [sampleAuthKey], headers: {} });
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: [sampleAuthKey],
+        headers: {},
+      });
 
       const api = new AuthApi(mockConfig, mockHttpClient);
       const result = await api.listApplicationKeys(42);
 
       expect(result).toEqual([sampleAuthKey]);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'GET', path: 'http://localhost:8000/auth/application/42' }),
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/application/42',
+        }),
         'test-admin-key'
       );
     });
@@ -154,14 +180,21 @@ describe('AuthApi', () => {
 
   describe('listOrganizationKeys', () => {
     it('should list organization keys using GET /auth/organization/:id with admin key', async () => {
-      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({ status: 200, data: [sampleAuthKey], headers: {} });
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: [sampleAuthKey],
+        headers: {},
+      });
 
       const api = new AuthApi(mockConfig, mockHttpClient);
       const result = await api.listOrganizationKeys(7);
 
       expect(result).toEqual([sampleAuthKey]);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'GET', path: 'http://localhost:8000/auth/organization/7' }),
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/organization/7',
+        }),
         'test-admin-key'
       );
     });
@@ -169,17 +202,23 @@ describe('AuthApi', () => {
 
   describe('listFederationKeys', () => {
     it('should list federation keys using GET /auth/federation/:name with admin key', async () => {
-      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({ status: 200, data: [sampleAuthKey], headers: {} });
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: [sampleAuthKey],
+        headers: {},
+      });
 
       const api = new AuthApi(mockConfig, mockHttpClient);
       const result = await api.listFederationKeys(createFederationName('my-federation'));
 
       expect(result).toEqual([sampleAuthKey]);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'GET', path: 'http://localhost:8000/auth/federation/my-federation' }),
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/federation/my-federation',
+        }),
         'test-admin-key'
       );
     });
   });
 });
-

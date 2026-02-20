@@ -5,12 +5,7 @@
  * Auth management requires an adminKey in the client config.
  */
 
-import {
-    createApiKey,
-    createClient,
-    createFederationName,
-    createIndexName,
-} from '../src/index';
+import { createApiKey, createClient, createFederationName, createIndexName } from '../src/index';
 
 // Self-hosted instance with all key types configured
 const client = createClient({
@@ -93,8 +88,16 @@ async function trackBatchEvents() {
   const indexNames = [String(indexName)];
 
   await client.measure.trackBatch([
-    { event_name: 'search', properties: { searchcraft_index_names: indexNames, search_term: 'laptop' }, user },
-    { event_name: 'click', properties: { searchcraft_index_names: indexNames, external_document_id: 'prod-1' }, user },
+    {
+      event_name: 'search',
+      properties: { searchcraft_index_names: indexNames, search_term: 'laptop' },
+      user,
+    },
+    {
+      event_name: 'click',
+      properties: { searchcraft_index_names: indexNames, external_document_id: 'prod-1' },
+      user,
+    },
   ]);
   console.log('Batch events tracked');
 }
@@ -181,4 +184,3 @@ export async function main() {
 
 // Uncomment to run
 // main();
-

@@ -60,4 +60,3 @@ export type MeasureDashboardSummary = Record<string, unknown>;
  * Response from POST /measure/event and POST /measure/batch
  */
 export type MeasureOperationResponse = string;
-

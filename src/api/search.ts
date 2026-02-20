@@ -5,11 +5,11 @@
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type {
-    FederationName,
-    IndexName,
-    SearchRequest,
-    SearchResponse,
-    SearchcraftConfig,
+  FederationName,
+  IndexName,
+  SearchRequest,
+  SearchResponse,
+  SearchcraftConfig,
 } from '../types/index.js';
 import { validateLimit, validateOffset } from '../utils/validators.js';
 

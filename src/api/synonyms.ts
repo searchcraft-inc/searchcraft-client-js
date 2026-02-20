@@ -9,10 +9,10 @@
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type {
-    IndexName,
-    SearchcraftConfig,
-    SynonymOperationResponse,
-    SynonymsMap,
+  IndexName,
+  SearchcraftConfig,
+  SynonymOperationResponse,
+  SynonymsMap,
 } from '../types/index.js';
 
 /**

@@ -2,7 +2,14 @@
  * Basic search examples
  */
 
-import { createApiKey, createClient, createFederationName, createIndexName, exact, fuzzy } from '../src/index';
+import {
+  createApiKey,
+  createClient,
+  createFederationName,
+  createIndexName,
+  exact,
+  fuzzy,
+} from '../src/index';
 
 // Initialize the client
 const client = createClient({

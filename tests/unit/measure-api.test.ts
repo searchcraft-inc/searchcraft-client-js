@@ -60,10 +60,7 @@ describe('MeasureApi', () => {
       const api = new MeasureApi(mockConfig, mockHttpClient);
       await api.getDashboardSummary();
 
-      expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.anything(),
-        'test-read-key'
-      );
+      expect(mockHttpClient.request).toHaveBeenCalledWith(expect.anything(), 'test-read-key');
     });
   });
 
@@ -99,10 +96,7 @@ describe('MeasureApi', () => {
       const api = new MeasureApi(mockConfig, mockHttpClient);
       await api.trackEvent(sampleEvent);
 
-      expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.anything(),
-        'test-ingest-key'
-      );
+      expect(mockHttpClient.request).toHaveBeenCalledWith(expect.anything(), 'test-ingest-key');
     });
   });
 
@@ -139,11 +133,7 @@ describe('MeasureApi', () => {
       const api = new MeasureApi(mockConfig, mockHttpClient);
       await api.trackBatch([sampleEvent]);
 
-      expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.anything(),
-        'test-ingest-key'
-      );
+      expect(mockHttpClient.request).toHaveBeenCalledWith(expect.anything(), 'test-ingest-key');
     });
   });
 });
-

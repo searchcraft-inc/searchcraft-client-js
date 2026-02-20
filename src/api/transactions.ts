@@ -69,4 +69,3 @@ export class TransactionApi {
     return response.data;
   }
 }
-
