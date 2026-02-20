@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  QueryBuilder,
-  createDynamicQuery,
-  createExactQuery,
-  createFuzzyQuery,
-  dynamic,
-  exact,
-  fuzzy,
+    QueryBuilder,
+    createDynamicQuery,
+    createExactQuery,
+    createFuzzyQuery,
+    dynamic,
+    exact,
+    fuzzy,
 } from '../../src/utils/query-builder';
 
 describe('QueryBuilder', () => {
@@ -124,6 +124,12 @@ describe('QueryBuilder', () => {
       expect(query).toEqual({ exact: { ctx: 'test OR another' } });
     });
 
+    it('should combine with OR using a nested QueryBuilder', () => {
+      const right = exact().term('cheap').or('sale');
+      const query = exact().term('laptop').or(right).build();
+      expect(query).toEqual({ exact: { ctx: 'laptop OR cheap OR sale' } });
+    });
+
     it('should support NOT operator', () => {
       const query = exact().term('test').not('excluded').build();
       expect(query).toEqual({ exact: { ctx: 'test -excluded' } });
@@ -135,6 +141,11 @@ describe('QueryBuilder', () => {
       const subQuery = exact().term('a').or('b');
       const query = exact().group(subQuery).and('c').build();
       expect(query).toEqual({ exact: { ctx: '(a OR b) AND c' } });
+    });
+
+    it('should group a plain string with parentheses', () => {
+      const query = exact().term('laptop').and(exact().group('cheap OR sale')).build();
+      expect(query).toEqual({ exact: { ctx: 'laptop AND (cheap OR sale)' } });
     });
   });
 

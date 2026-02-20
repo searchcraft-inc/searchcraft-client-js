@@ -73,6 +73,17 @@ describe('SearchApi', () => {
   });
 
   describe('searchFederation', () => {
+    it('should validate offset parameter', async () => {
+      const api = new SearchApi(mockConfig, mockHttpClient);
+      const federationName = createFederationName('test-federation');
+      const request = {
+        query: { fuzzy: { ctx: 'test' } },
+        offset: -1,
+      };
+
+      await expect(api.searchFederation(federationName, request)).rejects.toThrow();
+    });
+
     it('should perform a federated search', async () => {
       const mockData = {
         hits: [],

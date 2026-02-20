@@ -69,4 +69,15 @@ describe('SearchcraftClient', () => {
 
     expect(client.httpClient).toBeDefined();
   });
+
+  it('should return frozen config via getConfig()', () => {
+    const client = createClient({
+      endpointUrl: 'http://localhost:8000',
+      readKey: createApiKey('test-read-key'),
+    });
+
+    const config = client.getConfig();
+    expect(config).toBeDefined();
+    expect(config.endpointUrl).toBe('http://localhost:8000');
+  });
 });

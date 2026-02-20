@@ -112,8 +112,21 @@ describe('validators', () => {
       expect(validateDateValue('2024-01-01T00:00:00Z')).toBe('2024-01-01T00:00:00.000Z');
     });
 
+    it('should handle numeric string timestamps', () => {
+      const result = validateDateValue('1704067200');
+      expect(result).toContain('2024-01-01');
+    });
+
     it('should reject invalid date strings', () => {
       expect(() => validateDateValue('invalid')).toThrow(ValidationError);
+    });
+
+    it('should reject non-string non-number non-Date values', () => {
+      const invalidValue = null as unknown as string;
+      expect(() => validateDateValue(invalidValue)).toThrow(ValidationError);
+      expect(() => validateDateValue(invalidValue)).toThrow(
+        'Date must be a string, number, or Date object'
+      );
     });
   });
 });
