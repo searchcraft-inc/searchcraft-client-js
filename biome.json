@@ -1,22 +1,19 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.4.3/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
       "complexity": {
         "noExtraBooleanCast": "error",
-        "noMultipleSpacesInRegularExpressionLiterals": "error",
         "noUselessCatch": "error",
         "noUselessConstructor": "error",
         "noUselessLoneBlockStatements": "error",
         "noUselessRename": "error",
-        "noWith": "error",
         "useLiteralKeys": "error",
-        "useOptionalChain": "error"
+        "useOptionalChain": "error",
+        "noAdjacentSpacesInRegex": "error"
       },
       "correctness": {
         "noConstAssign": "error",
@@ -24,12 +21,12 @@
         "noEmptyPattern": "error",
         "noGlobalObjectCalls": "error",
         "noInvalidConstructorSuper": "error",
-        "noNewSymbol": "error",
         "noUnreachable": "error",
         "noUnreachableSuper": "error",
         "noUnsafeFinally": "error",
         "noUnusedVariables": "error",
-        "useIsNan": "error"
+        "useIsNan": "error",
+        "noInvalidBuiltinInstantiation": "error"
       },
       "style": {
         "noNegationElse": "warn",
@@ -54,7 +51,8 @@
         "noGlobalAssign": "error",
         "noRedeclare": "error",
         "noShadowRestrictedNames": "error",
-        "noUnsafeNegation": "error"
+        "noUnsafeNegation": "error",
+        "noWith": "error"
       }
     }
   },
@@ -73,6 +71,6 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", "dist", "coverage"]
+    "includes": ["**", "!**/node_modules", "!**/dist", "!**/coverage"]
   }
 }
