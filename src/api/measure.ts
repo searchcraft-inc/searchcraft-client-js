@@ -9,10 +9,10 @@
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type {
-  MeasureDashboardSummary,
-  MeasureOperationResponse,
-  MeasureRequest,
-  SearchcraftConfig,
+    MeasureDashboardSummary,
+    MeasureOperationResponse,
+    MeasureRequest,
+    SearchcraftConfig,
 } from '../types/index.js';
 
 /**
@@ -25,8 +25,13 @@ export class MeasureApi {
   ) {}
 
   /**
-   * Returns measurement dashboard summary data
+   * Returns measurement dashboard summary data.
    * Uses GET /measure/dashboard/summary
+   * @returns A promise resolving to the dashboard summary statistics.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async getDashboardSummary(): Promise<MeasureDashboardSummary> {
     const apiKey = getApiKey(this.config, 'read');
@@ -41,8 +46,14 @@ export class MeasureApi {
   }
 
   /**
-   * Tracks a single measure event
+   * Tracks a single measure event.
    * Uses POST /measure/event
+   * @param event - The measure event data to track.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async trackEvent(event: MeasureRequest): Promise<MeasureOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -57,8 +68,14 @@ export class MeasureApi {
   }
 
   /**
-   * Tracks a batch of measure events
+   * Tracks a batch of measure events.
    * Uses POST /measure/batch
+   * @param events - An array of measure event data to track.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async trackBatch(events: MeasureRequest[]): Promise<MeasureOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');

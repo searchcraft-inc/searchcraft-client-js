@@ -9,10 +9,10 @@
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type {
-  IndexName,
-  SearchcraftConfig,
-  SynonymOperationResponse,
-  SynonymsMap,
+    IndexName,
+    SearchcraftConfig,
+    SynonymOperationResponse,
+    SynonymsMap,
 } from '../types/index.js';
 
 /**
@@ -25,9 +25,15 @@ export class SynonymsApi {
   ) {}
 
   /**
-   * Gets all synonyms for an index
+   * Gets all synonyms for an index.
    * Uses GET /index/:index/synonyms
-   * Returns a map of synonym key to list of terms
+   * @param indexName - The name of the index to retrieve synonyms for.
+   * @returns A promise resolving to a map of synonym keys to their associated terms.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async get(indexName: IndexName): Promise<SynonymsMap> {
     const apiKey = getApiKey(this.config, 'read');
@@ -42,10 +48,18 @@ export class SynonymsApi {
   }
 
   /**
-   * Adds synonyms to an index
+   * Adds synonyms to an index.
    * Uses POST /index/:index/synonyms
-   * @param synonyms - Array of synonym entries in "synonym:original-term" format
-   *   Example: ["nyc:new york city", "usa:united states"]
+   * @param indexName - The name of the index to add synonyms to.
+   * @param synonyms - Array of synonym entries in `"synonym:original-term"` format.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   * @example
+   * await client.synonyms.add('products', ['nyc:new york city', 'usa:united states']);
    */
   async add(indexName: IndexName, synonyms: string[]): Promise<SynonymOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -60,9 +74,16 @@ export class SynonymsApi {
   }
 
   /**
-   * Deletes specific synonyms from an index
+   * Deletes specific synonyms from an index.
    * Uses DELETE /index/:index/synonyms
-   * @param synonyms - Array of synonym entries in "synonym:original-term" format to delete
+   * @param indexName - The name of the index to remove synonyms from.
+   * @param synonyms - Array of synonym entries in `"synonym:original-term"` format to delete.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async delete(indexName: IndexName, synonyms: string[]): Promise<SynonymOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -77,8 +98,15 @@ export class SynonymsApi {
   }
 
   /**
-   * Deletes all synonyms from an index
+   * Deletes all synonyms from an index.
    * Uses DELETE /index/:index/synonyms/all
+   * @param indexName - The name of the index to clear all synonyms from.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async deleteAll(indexName: IndexName): Promise<SynonymOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');

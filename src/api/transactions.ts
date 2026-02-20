@@ -24,8 +24,15 @@ export class TransactionApi {
   ) {}
 
   /**
-   * Commits a write transaction for the given index
+   * Commits a write transaction for the given index.
    * Uses POST /index/:index/commit
+   * @param indexName - The name of the index whose pending transaction should be committed.
+   * @returns A promise resolving to a confirmation message string.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async commit(indexName: IndexName): Promise<TransactionOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -40,8 +47,15 @@ export class TransactionApi {
   }
 
   /**
-   * Rolls back a write transaction for the given index
+   * Rolls back a write transaction for the given index.
    * Uses POST /index/:index/rollback
+   * @param indexName - The name of the index whose pending transaction should be rolled back.
+   * @returns A promise resolving to a confirmation message string.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async rollback(indexName: IndexName): Promise<TransactionOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');

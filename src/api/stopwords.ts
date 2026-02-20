@@ -19,9 +19,15 @@ export class StopwordsApi {
   ) {}
 
   /**
-   * Gets all stopwords for an index
+   * Gets all stopwords for an index.
    * Uses GET /index/:index/stopwords
-   * Returns an array of stopword strings
+   * @param indexName - The name of the index to retrieve stopwords for.
+   * @returns A promise resolving to an array of stopword strings.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async get(indexName: IndexName): Promise<string[]> {
     const apiKey = getApiKey(this.config, 'read');
@@ -36,9 +42,16 @@ export class StopwordsApi {
   }
 
   /**
-   * Adds stopwords to an index
+   * Adds stopwords to an index.
    * Uses POST /index/:index/stopwords
-   * @param stopwords - Array of stopword strings to add
+   * @param indexName - The name of the index to add stopwords to.
+   * @param stopwords - Array of stopword strings to add.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async add(indexName: IndexName, stopwords: string[]): Promise<StopwordOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -53,9 +66,16 @@ export class StopwordsApi {
   }
 
   /**
-   * Deletes specific stopwords from an index
+   * Deletes specific stopwords from an index.
    * Uses DELETE /index/:index/stopwords
-   * @param stopwords - Array of stopword strings to remove
+   * @param indexName - The name of the index to remove stopwords from.
+   * @param stopwords - Array of stopword strings to remove.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async delete(indexName: IndexName, stopwords: string[]): Promise<StopwordOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -70,8 +90,15 @@ export class StopwordsApi {
   }
 
   /**
-   * Deletes all stopwords from an index
+   * Deletes all stopwords from an index.
    * Uses DELETE /index/:index/stopwords/all
+   * @param indexName - The name of the index to clear all stopwords from.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async deleteAll(indexName: IndexName): Promise<StopwordOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');

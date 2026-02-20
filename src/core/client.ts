@@ -36,6 +36,11 @@ export class SearchcraftClient {
   /** Authentication management (self-hosted only, requires adminKey in config) */
   public readonly auth: AuthApi;
 
+  /**
+   * Creates a new SearchcraftClient instance.
+   * @param config - Client configuration including the endpoint URL and at least one API key.
+   * @param httpClient - Optional custom HTTP client implementation. Defaults to the built-in fetch-based client.
+   */
   constructor(config: SearchcraftConfig, httpClient?: HttpClient) {
     this.config = createConfig(config);
     this.httpClient = httpClient ?? createHttpClient();
@@ -54,7 +59,8 @@ export class SearchcraftClient {
   }
 
   /**
-   * Gets the current configuration (readonly)
+   * Gets the current configuration (readonly).
+   * @returns The frozen client configuration object.
    */
   getConfig(): Readonly<SearchcraftConfig> {
     return this.config;
@@ -62,7 +68,10 @@ export class SearchcraftClient {
 }
 
 /**
- * Factory function to create a Searchcraft client
+ * Factory function to create a Searchcraft client.
+ * @param config - Client configuration including the endpoint URL and at least one API key.
+ * @param httpClient - Optional custom HTTP client implementation. Defaults to the built-in fetch-based client.
+ * @returns A configured {@link SearchcraftClient} instance.
  */
 export const createClient = (
   config: SearchcraftConfig,

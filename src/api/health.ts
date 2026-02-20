@@ -26,7 +26,12 @@ export class HealthApi {
   ) {}
 
   /**
-   * Performs a health check on the Searchcraft instance
+   * Performs a health check on the Searchcraft instance.
+   * @returns A promise resolving to the health check data with status and message.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async check(): Promise<HealthCheckData> {
     const apiKey = getApiKey(this.config, 'read');

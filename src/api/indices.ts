@@ -25,8 +25,13 @@ export class IndexApi {
   ) {}
 
   /**
-   * Lists all index names
+   * Lists all index names.
    * Uses GET /index
+   * @returns A promise resolving to the list of index names.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async list(): Promise<IndexListResponse> {
     const apiKey = getApiKey(this.config, 'read');
@@ -41,8 +46,15 @@ export class IndexApi {
   }
 
   /**
-   * Gets the configuration for a specific index
+   * Gets the configuration for a specific index.
    * Uses GET /index/:index
+   * @param indexName - The name of the index to retrieve.
+   * @returns A promise resolving to the index configuration.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async get(indexName: IndexName): Promise<IndexConfig> {
     const apiKey = getApiKey(this.config, 'read');
@@ -57,9 +69,16 @@ export class IndexApi {
   }
 
   /**
-   * Creates a new index with the given configuration
-   * Uses PUT /index/:index with body { index: { name, ...config } }
-   * The name field is automatically populated from the indexName parameter
+   * Creates a new index with the given configuration.
+   * Uses PUT /index/:index with body `{ index: { name, ...config } }`.
+   * The `name` field is automatically populated from the `indexName` parameter.
+   * @param indexName - The name of the new index.
+   * @param indexConfig - The configuration for the new index.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async create(indexName: IndexName, indexConfig: IndexConfig): Promise<IndexOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -79,8 +98,16 @@ export class IndexApi {
   }
 
   /**
-   * Updates an existing index with partial configuration changes
-   * Uses PATCH /index/:index with body { index: partialConfig }
+   * Updates an existing index with partial configuration changes.
+   * Uses PATCH /index/:index with body `{ index: partialConfig }`.
+   * @param indexName - The name of the index to update.
+   * @param indexConfig - A partial configuration object with the fields to update.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async update(
     indexName: IndexName,
@@ -103,8 +130,15 @@ export class IndexApi {
   }
 
   /**
-   * Deletes an index
+   * Deletes an index.
    * Uses DELETE /index/:index
+   * @param indexName - The name of the index to delete.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async delete(indexName: IndexName): Promise<IndexOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -119,8 +153,13 @@ export class IndexApi {
   }
 
   /**
-   * Gets statistics for all indices
+   * Gets statistics for all indices.
    * Uses GET /index/stats
+   * @returns A promise resolving to statistics for every index on the cluster.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async getStats(): Promise<AllIndexStatsResponse> {
     const apiKey = getApiKey(this.config, 'read');
@@ -135,8 +174,15 @@ export class IndexApi {
   }
 
   /**
-   * Gets statistics for a specific index
+   * Gets statistics for a specific index.
    * Uses GET /index/:index_name/stats
+   * @param indexName - The name of the index to retrieve statistics for.
+   * @returns A promise resolving to the statistics for the specified index.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async getIndexStats(indexName: IndexName): Promise<IndexStats> {
     const apiKey = getApiKey(this.config, 'read');

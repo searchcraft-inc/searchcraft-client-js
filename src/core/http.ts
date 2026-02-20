@@ -9,11 +9,24 @@ import { ApiError, AuthenticationError, NetworkError, NotFoundError } from '../t
  * HTTP client interface for dependency injection
  */
 export interface HttpClient {
+  /**
+   * Executes an HTTP request against the Searchcraft API.
+   * @param options - Request options including method, path, optional body, headers, and timeout.
+   * @param apiKey - The API key to use for the Authorization header.
+   * @returns A promise resolving to the typed HTTP response.
+   * @throws {AuthenticationError} When the server responds with 401 or 403.
+   * @throws {NotFoundError} When the server responds with 404.
+   * @throws {ApiError} When the server responds with any other non-2xx status.
+   * @throws {NetworkError} When the request times out or a network-level failure occurs.
+   */
   request<T>(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpResponse<T>>;
 }
 
 /**
- * Creates headers for the request
+ * Creates headers for the request.
+ * @param apiKey - The API key used for the `Authorization` header.
+ * @param customHeaders - Optional additional headers to merge in (override defaults).
+ * @returns A headers record with `Content-Type` and `Authorization` set.
  */
 const createHeaders = (
   apiKey: ApiKey,
@@ -27,7 +40,12 @@ const createHeaders = (
 };
 
 /**
- * Handles HTTP errors and throws appropriate error types
+ * Handles HTTP errors and throws the appropriate typed error.
+ * @param status - The HTTP response status code.
+ * @param data - The parsed response body, used to extract the error message.
+ * @throws {AuthenticationError} When `status` is 401 or 403.
+ * @throws {NotFoundError} When `status` is 404.
+ * @throws {ApiError} For all other non-2xx status codes.
  */
 const handleHttpError = (status: number, data: unknown): never => {
   const errorMessage =
@@ -50,6 +68,16 @@ const handleHttpError = (status: number, data: unknown): never => {
  * Default fetch-based HTTP client implementation
  */
 export class FetchHttpClient implements HttpClient {
+  /**
+   * Executes an HTTP request using the browser/Node.js Fetch API.
+   * @param options - Request options including method, path, optional body, headers, and timeout.
+   * @param apiKey - The API key to use for the Authorization header.
+   * @returns A promise resolving to the typed HTTP response.
+   * @throws {AuthenticationError} When the server responds with 401 or 403.
+   * @throws {NotFoundError} When the server responds with 404.
+   * @throws {ApiError} When the server responds with any other non-2xx status.
+   * @throws {NetworkError} When the request times out or a network-level failure occurs.
+   */
   async request<T>(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpResponse<T>> {
     const { method, path, body, headers: customHeaders, timeout = 30000 } = options;
 
@@ -108,7 +136,8 @@ export class FetchHttpClient implements HttpClient {
 }
 
 /**
- * Creates a default HTTP client
+ * Creates a default fetch-based HTTP client.
+ * @returns A new {@link FetchHttpClient} instance.
  */
 export const createHttpClient = (): HttpClient => {
   return new FetchHttpClient();

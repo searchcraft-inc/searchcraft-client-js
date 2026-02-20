@@ -24,9 +24,18 @@ export class DocumentApi {
   ) {}
 
   /**
-   * Inserts a document into an index
-   * Note: This will always create a new document, even if one exists with the same id
+   * Inserts a document into an index.
+   * Note: This will always create a new document, even if one exists with the same id.
    * Uses POST /index/:index/documents with array body
+   * @param indexName - The name of the index to insert the document into.
+   * @param document - The document to insert. Must include an `id` field.
+   * @returns A promise resolving to the operation result.
+   * @throws {ValidationError} When the document is missing the `id` field.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async insert(indexName: IndexName, document: DocumentWithId): Promise<DocumentOperationResponse> {
     if (!document.id) {
@@ -50,8 +59,17 @@ export class DocumentApi {
   }
 
   /**
-   * Deletes a document from an index by its source ID
+   * Deletes a document from an index by its source ID.
    * Uses DELETE /index/:index/documents/query with query body
+   * @param indexName - The name of the index to delete the document from.
+   * @param documentId - The source `id` value of the document to delete.
+   * @returns A promise resolving to the delete operation result.
+   * @throws {ValidationError} When `documentId` is falsy.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async delete(indexName: IndexName, documentId: string | number): Promise<DocumentDeleteResponse> {
     if (!documentId) {
@@ -81,9 +99,18 @@ export class DocumentApi {
   }
 
   /**
-   * Batch insert multiple documents into an index
-   * Note: This will always create new documents, even if documents exist with the same ids
+   * Batch inserts multiple documents into an index.
+   * Note: This will always create new documents, even if documents exist with the same ids.
    * Uses POST /index/:index/documents with array body
+   * @param indexName - The name of the index to insert documents into.
+   * @param documents - A non-empty array of documents to insert. Each must include an `id` field.
+   * @returns A promise resolving to the operation result.
+   * @throws {ValidationError} When `documents` is empty or any document is missing the `id` field.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async batchInsert(
     indexName: IndexName,
@@ -117,8 +144,17 @@ export class DocumentApi {
   }
 
   /**
-   * Batch delete multiple documents by field term match
+   * Batch deletes multiple documents by their source IDs.
    * Uses DELETE /index/:index/documents with field term body
+   * @param indexName - The name of the index to delete documents from.
+   * @param documentIds - A non-empty array of source `id` values to delete.
+   * @returns A promise resolving to the delete operation result.
+   * @throws {ValidationError} When `documentIds` is empty.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async batchDelete(
     indexName: IndexName,
@@ -146,8 +182,15 @@ export class DocumentApi {
   }
 
   /**
-   * Delete all documents from an index
+   * Deletes all documents from an index.
    * Uses DELETE /index/:index/documents/all
+   * @param indexName - The name of the index to clear.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async deleteAll(indexName: IndexName): Promise<DocumentOperationResponse> {
     const apiKey = getApiKey(this.config, 'write');
@@ -166,9 +209,16 @@ export class DocumentApi {
   }
 
   /**
-   * Get a document by its internal Searchcraft ID (_id)
+   * Gets a document by its internal Searchcraft ID (`_id`).
    * Uses GET /index/:index/documents/:document_id
-   * Returns a SearchHit containing the document, its internal ID, score, and source index
+   * @param indexName - The name of the index to retrieve the document from.
+   * @param internalId - The internal Searchcraft `_id` of the document (not the source `id`).
+   * @returns A promise resolving to a {@link SearchHit} containing the document, internal ID, score, and source index.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
+   * @throws {NotFoundError} When the document or index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async get<T = unknown>(indexName: IndexName, internalId: string): Promise<SearchHit<T>> {
     const apiKey = getApiKey(this.config, 'read');
