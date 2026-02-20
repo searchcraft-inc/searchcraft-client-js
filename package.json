@@ -3,7 +3,17 @@
   "version": "0.1.0",
   "description": "TypeScript client library for the Searchcraft API",
   "type": "module",
-  "keywords": ["searchcraft", "search", "api-client", "typescript", "full-text-search"],
+  "keywords": [
+    "searchcraft",
+    "search",
+    "api-client",
+    "typescript",
+    "full-text-search",
+    "sdk",
+    "search-engine",
+    "federated-search",
+    "query-builder"
+  ],
   "author": "Searchcraft",
   "license": "Apache-2.0",
   "repository": {
@@ -19,12 +29,16 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -35,19 +49,21 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "2.4.3",
     "@types/node": "^22.10.2",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/coverage-v8": "^4.0.18",
+    "husky": "^9.1.7",
     "terser": "^5.44.1",
     "typescript": "^5.9.3",
-    "vite": "^6.0.3",
+    "vite": "^7.3.1",
     "vite-plugin-dts": "^4.3.0",
-    "vitest": "^2.1.8"
+    "vitest": "^4.0.18"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }
