@@ -29,6 +29,7 @@ A TypeScript client library for the <a href="https://searchcraft.io">Searchcraft
 ## Features
 
 - Full TypeScript support with comprehensive type definitions.
+- Works for JavaScript projects as well.
 - Functional, immutable API design.
 - Composable query builder.
 - Support for all Searchcraft query modes (fuzzy, exact, dynamic) and operations.
@@ -351,8 +352,10 @@ await client.stopwords.deleteAll(indexName);
 ### Health Check
 
 ```typescript
+// check() throws on error, so if it returns the service is healthy
 const health = await client.health.check();
-console.log('Healthy:', health.data.healthy);
+console.log('Status:', health.status);   // 200
+console.log('Message:', health.data);    // "Searchcraft is healthy."
 ```
 
 ## API Reference
