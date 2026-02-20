@@ -1,0 +1,67 @@
+name: Publish to NPM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create git tags and GitHub releases
+      id-token: write # npm provenance attestations
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get package version
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if version is already published
+        id: check
+        run: |
+          if npm view "@searchcraft/client@${{ steps.pkg.outputs.version }}" version 2>/dev/null | grep -q .; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Version ${{ steps.pkg.outputs.version }} already published — skipping."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run tests
+        if: steps.check.outputs.skip == 'false'
+        run: npm test
+
+      - name: Publish to npm
+        if: steps.check.outputs.skip == 'false'
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract changelog notes
+        if: steps.check.outputs.skip == 'false'
+        id: notes
+        run: |
+          VERSION="${{ steps.pkg.outputs.version }}"
+          NOTES=$(awk "/^## ${VERSION}/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md | sed '/^[[:space:]]*$/d')
+          printf 'notes<<EOF\n%s\nEOF\n' "$NOTES" >> $GITHUB_OUTPUT
+
+      - name: Create git tag and GitHub release
+        if: steps.check.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: v${{ steps.pkg.outputs.version }}
+          body: ${{ steps.notes.outputs.notes }}
+          make_latest: true
+

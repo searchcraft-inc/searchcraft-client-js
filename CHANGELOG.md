@@ -1,5 +1,5 @@
-# Changlog
+# Changelog
 
-## Version 0.1.0 - 2026-02-20
+## 0.1.0
 
-Initial release!
+- Initial release!
