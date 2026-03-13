@@ -100,6 +100,7 @@ const client = createClient({
   endpointUrl: 'https://your-instance.com',
   readKey: createApiKey('your-read-key'),
   ingestKey: createApiKey('your-ingest-key'), // Optional, for document operations
+  adminKey: createApiKey('your-admin-key'), // Optional, only needed for self-hosted clusters
   timeout: 30000, // Optional, default 30 seconds
   headers: {
     // Optional Searchcraft headers for analytics and tracking:
@@ -109,6 +110,8 @@ const client = createClient({
   },
 });
 ```
+
+> **Note:** The `adminKey` is only required for self-hosted Searchcraft clusters. If you're using Searchcraft Cloud, you do not need to provide an admin key.
 
 ### Basic Search
 
