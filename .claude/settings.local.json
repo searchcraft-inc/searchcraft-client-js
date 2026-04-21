@@ -1,5 +1,0 @@
-{
-  "permissions": {
-    "allow": ["Bash(grep -E \"\\\\.rs$\")", "Bash(npm run *)", "Bash(npm test *)"]
-  }
-}
