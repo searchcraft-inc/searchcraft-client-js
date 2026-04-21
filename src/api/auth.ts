@@ -13,7 +13,7 @@ import type {
   CreateAuthKeyRequest,
   UpdateAuthKeyRequest,
 } from '../types/auth.js';
-import type { FederationName, SearchcraftConfig } from '../types/index.js';
+import type { FederationName, IndexName, SearchcraftConfig } from '../types/index.js';
 
 /**
  * Authentication management API class (self-hosted only)
@@ -202,6 +202,28 @@ export class AuthApi {
   async listFederationKeys(federationName: FederationName): Promise<AuthKeyListResponse> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/federation/${federationName}`;
+    const response = await this.httpClient.request<AuthKeyListResponse>(
+      { method: 'GET', path, timeout: this.config.timeout },
+      apiKey
+    );
+    return response.data;
+  }
+
+  /**
+   * Returns all authentication keys that can access the given index.
+   * Uses GET /auth/index/:index_name
+   * Added in engine 0.10.0.
+   * @param indexName - The name of the index.
+   * @returns A promise resolving to the list of authentication keys for the index.
+   * @throws {ConfigurationError} When `adminKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks admin permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async listIndexKeys(indexName: IndexName): Promise<AuthKeyListResponse> {
+    const apiKey = getApiKey(this.config, 'admin');
+    const path = `${this.config.endpointUrl}/auth/index/${indexName}`;
     const response = await this.httpClient.request<AuthKeyListResponse>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey

@@ -2,6 +2,8 @@
  * Types for index configuration management
  */
 
+import type { AIConfig } from './ai.js';
+
 /**
  * Supported field types in Searchcraft indices
  */
@@ -33,6 +35,16 @@ export interface IndexConfig {
   readonly search_fields?: string[];
   readonly time_decay_field?: string;
   readonly weight_multipliers?: Record<string, number>;
+  /**
+   * Whether AI-powered features are enabled for this index.
+   * Added in engine 0.10.0. Requires an admin-level key to change.
+   */
+  readonly ai_enabled?: boolean;
+  /**
+   * AI configuration for LLM-powered features like search summarization.
+   * Added in engine 0.10.0.
+   */
+  readonly ai?: AIConfig;
 }
 
 /**

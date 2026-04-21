@@ -2,6 +2,21 @@
  * Type exports
  */
 
+// AI types (engine 0.10.0+)
+export type {
+  AICapabilities,
+  AIConfig,
+  IndexCapabilities,
+  KeywordRule,
+  LLMProvider,
+  PromptInstruction,
+  SearchSummaryConfig,
+  SummaryDelta,
+  SummaryDone,
+  SummaryError,
+  SummaryMetadata,
+  SummaryStreamEvent,
+} from './ai.js';
 // Auth types (self-hosted only)
 export type {
   AuthKey,
@@ -21,6 +36,7 @@ export type {
   HttpMethod,
   HttpRequestOptions,
   HttpResponse,
+  HttpStreamResponse,
   IndexName,
   OccurMode,
   QueryMode,
@@ -78,12 +94,14 @@ export type {
 
 // Measure types
 export type {
+  KnownMeasureEventName,
   MeasureDashboardSummary,
   MeasureEventName,
   MeasureOperationResponse,
   MeasureRequest,
   MeasureRequestProperties,
   MeasureRequestUser,
+  MeasureUserType,
 } from './measure.js';
 // Search types
 export type {

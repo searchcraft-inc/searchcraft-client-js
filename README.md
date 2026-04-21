@@ -113,6 +113,8 @@ const client = createClient({
 
 > **Note:** The `adminKey` is only required for self-hosted Searchcraft clusters. If you're using Searchcraft Cloud, you do not need to provide an admin key.
 
+> **Runtime notes:** Streaming endpoints (e.g. [`searchSummary`](#ai-powered-search-summaries)) require a runtime with WHATWG `ReadableStream` support — Node.js 18+, Deno, Bun, or any modern browser. When running on Node.js the client automatically sets a `User-Agent: searchcraft-client-js/<version>` header; in browsers the header is suppressed because `User-Agent` is forbidden by the fetch specification.
+
 ### Basic Search
 
 ```typescript
@@ -219,6 +221,49 @@ const request = fuzzy().term('search term').buildRequest();
 const response = await client.search.searchFederation(federationName, request);
 ```
 
+### AI-Powered Search Summaries
+
+When an index has AI enabled and a `search_summary` configuration, you can
+stream an LLM-generated summary of the top hits for a query. The engine
+responds with Server-Sent Events which the client surfaces as an async
+iterable of tagged events.
+
+```typescript
+import { fuzzy } from '@searchcraft/client';
+
+const request = fuzzy().term('wireless headphones').limit(5).buildRequest();
+
+for await (const event of client.search.searchSummary(indexName, request)) {
+  switch (event.type) {
+    case 'metadata':
+      console.log('Result count:', event.data.results_count, 'cached:', event.data.cached);
+      break;
+    case 'delta':
+      process.stdout.write(event.data.content);
+      break;
+    case 'done':
+      console.log('\nStream complete.');
+      break;
+    case 'error':
+      console.error('Summary error:', event.data.message);
+      break;
+  }
+}
+```
+
+Event shapes:
+
+| Event type | Data shape                                   |
+|------------|----------------------------------------------|
+| `metadata` | `{ results_count: number; cached: boolean }` |
+| `delta`    | `{ content: string }`                        |
+| `done`     | `{ results_count: number }`                  |
+| `error`    | `{ message: string }`                        |
+
+Requires that the index has `ai_enabled: true`, that an `llm_provider` and
+`search_summary.model` are configured, and that the authentication key has
+the `LLM_RAG_SUMMARIES` permission.
+
 ### Advanced: Raw Query Objects
 
 For complex queries or when you need maximum control, you can construct request objects directly instead of using the query builder:
@@ -296,9 +341,46 @@ await client.indices.update(indexName, {
   weight_multipliers: { title: 2.0, body: 0.7 },
 });
 
+// Inspect AI capability flags for an index
+const { ai } = await client.indices.getCapabilities(indexName);
+console.log(ai.enabled, ai.searchSummaryConfigured);
+
 // Delete an index
 await client.indices.delete(indexName);
 ```
+
+#### Enabling AI on an Index
+
+Indices created or updated against Searchcraft engine 0.10.0 or newer can
+carry an `ai` configuration block plus a top-level `ai_enabled` flag. Toggling
+`ai_enabled` requires an admin-level key; editing other `ai` fields only
+requires the ingest key.
+
+```typescript
+await client.indices.create(indexName, {
+  search_fields: ['title', 'body'],
+  fields: {
+    title: { type: 'text', indexed: true, stored: true },
+    body: { type: 'text', indexed: true, stored: true },
+  },
+  ai_enabled: true,
+  ai: {
+    llm_provider: 'anthropic',
+    llm_api_key: process.env.ANTHROPIC_API_KEY,
+    search_summary: {
+      model: 'claude-sonnet-4-6',
+      temperature: 0.2,
+      character_limit: 500,
+    },
+  },
+});
+
+// Partial updates send a flat body (no `{ index: ... }` wrapper).
+await client.indices.update(indexName, { ai_enabled: false });
+```
+
+Supported `llm_provider` values: `anthropic`, `bedrock`, `google`, `llamacpp`,
+`mistral`, `ollama`, `openai`, `xai`.
 
 ### Federation Management
 
@@ -352,6 +434,34 @@ await client.stopwords.delete(indexName, ['foo', 'bar']);
 await client.stopwords.deleteAll(indexName);
 ```
 
+### Authentication Management (self-hosted only)
+
+The auth endpoints are only available on self-hosted Searchcraft clusters and
+require an `adminKey` in the client config.
+
+```typescript
+// List every key on the cluster
+const allKeys = await client.auth.listKeys();
+
+// Scope lookups by owner
+const appKeys = await client.auth.listApplicationKeys(42);
+const orgKeys = await client.auth.listOrganizationKeys(7);
+const fedKeys = await client.auth.listFederationKeys(createFederationName('my-federation'));
+
+// New in engine 0.10.0: list every key that can access a given index
+const indexKeys = await client.auth.listIndexKeys(createIndexName('products'));
+
+// Create, update, and delete keys
+const created = await client.auth.createKey({
+  name: 'my-read-key',
+  permissions: 1,          // 1 = read, 15 = ingest, 63 = admin
+  allowed_indexes: ['products'],
+  status: 'active',
+});
+await client.auth.updateKey(created.key, { status: 'inactive' });
+await client.auth.deleteKey(created.key);
+```
+
 ### Health Check
 
 ```typescript
@@ -371,6 +481,7 @@ console.log('Message:', health.data);    // "Searchcraft is healthy."
 
 - `searchIndex<T>(indexName: IndexName, request: SearchRequest): Promise<SearchResponse<T>>`
 - `searchFederation<T>(federationName: FederationName, request: SearchRequest): Promise<SearchResponse<T>>`
+- `searchSummary(indexName: IndexName, request: SearchRequest): AsyncIterable<SummaryStreamEvent>` — Streams an AI-generated summary as tagged `metadata` / `delta` / `done` / `error` events (engine 0.10.0+)
 
 ### Document API
 
@@ -388,6 +499,9 @@ console.log('Message:', health.data);    // "Searchcraft is healthy."
 - `create(indexName: IndexName, indexConfig: IndexConfig): Promise<IndexOperationResponse>` - Create a new index
 - `update(indexName: IndexName, indexConfig: Partial<IndexConfig>): Promise<IndexOperationResponse>` - Update an existing index (partial)
 - `delete(indexName: IndexName): Promise<IndexOperationResponse>` - Delete an index
+- `getStats(): Promise<AllIndexStatsResponse>` - Get document counts for every index on the cluster
+- `getIndexStats(indexName: IndexName): Promise<IndexStats>` - Get the document count for a single index
+- `getCapabilities(indexName: IndexName): Promise<IndexCapabilities>` - Inspect AI capability flags for an index (engine 0.10.0+)
 
 ### Federation API
 
@@ -408,6 +522,21 @@ console.log('Message:', health.data);    // "Searchcraft is healthy."
 - `add(indexName: IndexName, stopwords: string[]): Promise<StopwordOperationResponse>` - Add custom stopwords
 - `delete(indexName: IndexName, stopwords: string[]): Promise<StopwordOperationResponse>` - Delete specific stopwords
 - `deleteAll(indexName: IndexName): Promise<StopwordOperationResponse>` - Delete all stopwords from an index
+
+### Auth API (self-hosted only)
+
+Requires `adminKey` in the client config.
+
+- `listKeys(): Promise<AuthKeyListResponse>` - List every authentication key on the cluster
+- `getKey(key: string): Promise<AuthKey>` - Look up a single key by value
+- `createKey(request: CreateAuthKeyRequest): Promise<AuthKey>` - Create a new key
+- `updateKey(key: string, request: UpdateAuthKeyRequest): Promise<AuthKey>` - Partially update a key
+- `deleteKey(key: string): Promise<string>` - Delete a key
+- `deleteAllKeys(): Promise<string>` - Delete every key on the cluster
+- `listApplicationKeys(applicationId: number): Promise<AuthKeyListResponse>` - List keys for an application
+- `listOrganizationKeys(organizationId: number): Promise<AuthKeyListResponse>` - List keys for an organization
+- `listFederationKeys(federationName: FederationName): Promise<AuthKeyListResponse>` - List keys associated with a federation
+- `listIndexKeys(indexName: IndexName): Promise<AuthKeyListResponse>` - List keys that can access an index (engine 0.10.0+)
 
 ### Health API
 

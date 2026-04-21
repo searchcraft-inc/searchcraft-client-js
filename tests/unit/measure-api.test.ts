@@ -135,5 +135,40 @@ describe('MeasureApi', () => {
 
       expect(mockHttpClient.request).toHaveBeenCalledWith(expect.anything(), 'test-ingest-key');
     });
+
+    it('should track the api_summary_requested event added in engine 0.10.0', async () => {
+      const summaryEvent: MeasureRequest = {
+        event_name: 'api_summary_requested',
+        properties: {
+          searchcraft_index_names: ['products'],
+          search_term: 'laptop',
+          search_kind: 'fuzzy',
+          ai_provider: 'anthropic',
+          number_of_documents: 5,
+        },
+        user: {
+          user_id: 'user-1',
+          user_type: 'anonymous',
+        },
+      };
+
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: 'batch tracked',
+        headers: {},
+      });
+
+      const api = new MeasureApi(mockConfig, mockHttpClient);
+      await api.trackBatch([summaryEvent]);
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          path: 'http://localhost:8000/measure/batch',
+          body: [summaryEvent],
+        }),
+        'test-ingest-key'
+      );
+    });
   });
 });

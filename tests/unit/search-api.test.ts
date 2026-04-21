@@ -3,6 +3,18 @@ import { SearchApi } from '../../src/api/search';
 import type { HttpClient } from '../../src/core/http';
 import { createApiKey, createFederationName, createIndexName } from '../../src/types/index';
 
+function stringsToStream(chunks: string[]): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk));
+      }
+      controller.close();
+    },
+  });
+}
+
 describe('SearchApi', () => {
   const mockConfig = {
     endpointUrl: 'http://localhost:8000',
@@ -12,6 +24,7 @@ describe('SearchApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   describe('searchIndex', () => {
@@ -69,6 +82,73 @@ describe('SearchApi', () => {
       };
 
       await expect(api.searchIndex(indexName, request)).rejects.toThrow();
+    });
+  });
+
+  describe('searchSummary', () => {
+    it('should stream SSE events from POST /index/:index/search/summary', async () => {
+      const sseBody =
+        'event: metadata\ndata: {"results_count":3,"cached":false}\n\n' +
+        'event: delta\ndata: {"content":"Hello"}\n\n' +
+        'event: delta\ndata: {"content":" world"}\n\n' +
+        'event: done\ndata: {"results_count":3}\n\n';
+
+      vi.mocked(mockHttpClient.stream).mockResolvedValueOnce({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+        body: stringsToStream([sseBody]),
+      });
+
+      const api = new SearchApi(mockConfig, mockHttpClient);
+      const request = { query: { fuzzy: { ctx: 'laptop' } }, limit: 5 };
+
+      const events = [];
+      for await (const event of api.searchSummary(createIndexName('products'), request)) {
+        events.push(event);
+      }
+
+      expect(events).toEqual([
+        { type: 'metadata', data: { results_count: 3, cached: false } },
+        { type: 'delta', data: { content: 'Hello' } },
+        { type: 'delta', data: { content: ' world' } },
+        { type: 'done', data: { results_count: 3 } },
+      ]);
+
+      expect(mockHttpClient.stream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          path: 'http://localhost:8000/index/products/search/summary',
+          body: request,
+        }),
+        'test-read-key'
+      );
+    });
+
+    it('should emit an error event when the server sends one', async () => {
+      const sseBody = 'event: error\ndata: {"message":"LLM unavailable"}\n\n';
+      vi.mocked(mockHttpClient.stream).mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        body: stringsToStream([sseBody]),
+      });
+
+      const api = new SearchApi(mockConfig, mockHttpClient);
+      const events = [];
+      for await (const event of api.searchSummary(createIndexName('products'), {
+        query: { fuzzy: { ctx: 'x' } },
+      })) {
+        events.push(event);
+      }
+      expect(events).toEqual([{ type: 'error', data: { message: 'LLM unavailable' } }]);
+    });
+
+    it('should validate limit before streaming', async () => {
+      const api = new SearchApi(mockConfig, mockHttpClient);
+      const iter = api.searchSummary(createIndexName('products'), {
+        query: { fuzzy: { ctx: 'x' } },
+        limit: 201,
+      });
+      await expect(iter[Symbol.asyncIterator]().next()).rejects.toThrow();
     });
   });
 

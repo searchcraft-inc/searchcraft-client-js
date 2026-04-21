@@ -2,8 +2,14 @@
  * HTTP client for making requests to the Searchcraft API
  */
 
-import type { ApiKey, HttpRequestOptions, HttpResponse } from '../types/index.js';
+import type {
+  ApiKey,
+  HttpRequestOptions,
+  HttpResponse,
+  HttpStreamResponse,
+} from '../types/index.js';
 import { ApiError, AuthenticationError, NetworkError, NotFoundError } from '../types/index.js';
+import { CLIENT_USER_AGENT, isNodeRuntime } from './version.js';
 
 /**
  * HTTP client interface for dependency injection
@@ -20,6 +26,21 @@ export interface HttpClient {
    * @throws {NetworkError} When the request times out or a network-level failure occurs.
    */
   request<T>(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpResponse<T>>;
+
+  /**
+   * Executes an HTTP request and returns the raw body as a readable stream.
+   * Intended for Server-Sent Events endpoints such as search summary streaming.
+   * The timeout, when provided, bounds only the initial response - not the
+   * duration of the stream - so callers may safely read long-running streams.
+   * @param options - Request options including method, path, optional body, headers, and timeout.
+   * @param apiKey - The API key to use for the Authorization header.
+   * @returns A promise resolving to a {@link HttpStreamResponse} with the body stream.
+   * @throws {AuthenticationError} When the server responds with 401 or 403.
+   * @throws {NotFoundError} When the server responds with 404.
+   * @throws {ApiError} When the server responds with any other non-2xx status.
+   * @throws {NetworkError} When the initial response times out or a network-level failure occurs.
+   */
+  stream(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpStreamResponse>;
 }
 
 /**
@@ -32,9 +53,17 @@ const createHeaders = (
   apiKey: ApiKey,
   customHeaders?: Readonly<Record<string, string>>
 ): Record<string, string> => {
-  return {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Authorization: apiKey,
+  };
+  // `User-Agent` is a forbidden header in browsers and setting it has no
+  // effect, so only emit one when running server-side on Node.js.
+  if (isNodeRuntime()) {
+    headers['User-Agent'] = CLIENT_USER_AGENT;
+  }
+  return {
+    ...headers,
     ...customHeaders,
   };
 };
@@ -119,6 +148,76 @@ export class FetchHttpClient implements HttpClient {
         error instanceof ApiError ||
         error instanceof AuthenticationError ||
         error instanceof NotFoundError
+      ) {
+        throw error;
+      }
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new NetworkError('Request timeout');
+        }
+        throw new NetworkError(error.message);
+      }
+
+      throw new NetworkError('Unknown error occurred');
+    }
+  }
+
+  async stream(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpStreamResponse> {
+    const { method, path, body, headers: customHeaders, timeout = 30000 } = options;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(path, {
+        method,
+        headers: {
+          ...createHeaders(apiKey, customHeaders),
+          Accept: 'text/event-stream',
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        let errorBody: unknown = null;
+        try {
+          errorBody = await response.json();
+        } catch {
+          try {
+            errorBody = { message: await response.text() };
+          } catch {
+            errorBody = null;
+          }
+        }
+        handleHttpError(response.status, errorBody);
+      }
+
+      if (!response.body) {
+        throw new NetworkError('Response body is not a readable stream');
+      }
+
+      const responseHeaders: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+
+      return {
+        status: response.status,
+        body: response.body,
+        headers: Object.freeze(responseHeaders),
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (
+        error instanceof ApiError ||
+        error instanceof AuthenticationError ||
+        error instanceof NotFoundError ||
+        error instanceof NetworkError
       ) {
         throw error;
       }

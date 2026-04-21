@@ -7,6 +7,7 @@ import type { HttpClient } from '../core/http.js';
 import type {
   AllIndexStatsResponse,
   ApiResponse,
+  IndexCapabilities,
   IndexConfig,
   IndexListResponse,
   IndexName,
@@ -99,7 +100,9 @@ export class IndexApi {
 
   /**
    * Updates an existing index with partial configuration changes.
-   * Uses PATCH /index/:index with body `{ index: partialConfig }`.
+   * Uses PATCH /index/:index with the partial config sent as the raw body
+   * (the engine deserializes the body directly into `IndexPatchPayload`,
+   * so the payload must NOT be wrapped in an `index` object).
    * @param indexName - The name of the index to update.
    * @param indexConfig - A partial configuration object with the fields to update.
    * @returns A promise resolving to the operation result.
@@ -120,7 +123,7 @@ export class IndexApi {
       {
         method: 'PATCH',
         path,
-        body: { index: indexConfig },
+        body: indexConfig,
         timeout: this.config.timeout,
       },
       apiKey
@@ -189,6 +192,29 @@ export class IndexApi {
     const path = `${this.config.endpointUrl}/index/${indexName}/stats`;
 
     const response = await this.httpClient.request<ApiResponse<IndexStats>>(
+      { method: 'GET', path, timeout: this.config.timeout },
+      apiKey
+    );
+
+    return response.data.data;
+  }
+
+  /**
+   * Gets AI capability and configuration status for an index.
+   * Uses GET /index/:index_name/capabilities
+   * Added in engine 0.10.0. No authentication is required by the server for
+   * this endpoint, but the client will send the read key when available.
+   * @param indexName - The name of the index to inspect.
+   * @returns A promise resolving to the AI capability flags for the index.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async getCapabilities(indexName: IndexName): Promise<IndexCapabilities> {
+    const apiKey = getApiKey(this.config, 'read');
+    const path = `${this.config.endpointUrl}/index/${indexName}/capabilities`;
+
+    const response = await this.httpClient.request<ApiResponse<IndexCapabilities>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );

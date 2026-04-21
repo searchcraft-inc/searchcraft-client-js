@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthApi } from '../../src/api/auth';
 import type { HttpClient } from '../../src/core/http';
 import type { AuthKey, CreateAuthKeyRequest, UpdateAuthKeyRequest } from '../../src/types/index';
-import { createApiKey, createFederationName } from '../../src/types/index';
+import { createApiKey, createFederationName, createIndexName } from '../../src/types/index';
 
 describe('AuthApi', () => {
   const mockConfig = {
@@ -216,6 +216,28 @@ describe('AuthApi', () => {
         expect.objectContaining({
           method: 'GET',
           path: 'http://localhost:8000/auth/federation/my-federation',
+        }),
+        'test-admin-key'
+      );
+    });
+  });
+
+  describe('listIndexKeys', () => {
+    it('should list index keys using GET /auth/index/:index_name with admin key', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: [sampleAuthKey],
+        headers: {},
+      });
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      const result = await api.listIndexKeys(createIndexName('products'));
+
+      expect(result).toEqual([sampleAuthKey]);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/index/products',
         }),
         'test-admin-key'
       );
