@@ -185,13 +185,16 @@ export class FetchHttpClient implements HttpClient {
       if (!response.ok) {
         let errorBody: unknown = null;
         try {
-          errorBody = await response.json();
-        } catch {
-          try {
-            errorBody = { message: await response.text() };
-          } catch {
-            errorBody = null;
+          const text = await response.text();
+          if (text) {
+            try {
+              errorBody = JSON.parse(text);
+            } catch {
+              errorBody = { message: text };
+            }
           }
+        } catch {
+          errorBody = null;
         }
         handleHttpError(response.status, errorBody);
       }

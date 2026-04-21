@@ -223,7 +223,7 @@ export class AuthApi {
    */
   async listIndexKeys(indexName: IndexName): Promise<AuthKeyListResponse> {
     const apiKey = getApiKey(this.config, 'admin');
-    const path = `${this.config.endpointUrl}/auth/index/${indexName}`;
+    const path = `${this.config.endpointUrl}/auth/index/${encodeURIComponent(indexName)}`;
     const response = await this.httpClient.request<AuthKeyListResponse>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey

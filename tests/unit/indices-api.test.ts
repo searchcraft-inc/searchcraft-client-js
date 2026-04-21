@@ -8,6 +8,7 @@ describe('IndexApi', () => {
     endpointUrl: 'http://localhost:8000',
     readKey: createApiKey('test-read-key'),
     ingestKey: createApiKey('test-ingest-key'),
+    adminKey: createApiKey('test-admin-key'),
     timeout: 30000,
   };
 
@@ -227,10 +228,24 @@ describe('IndexApi', () => {
         'test-read-key'
       );
     });
+
+    it('should propagate errors from the http client', async () => {
+      vi.mocked(mockHttpClient.request).mockRejectedValueOnce(new Error('not found'));
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      await expect(api.getCapabilities(createIndexName('missing'))).rejects.toThrow('not found');
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/index/missing/capabilities',
+        }),
+        'test-read-key'
+      );
+    });
   });
 
   describe('AI config on create/update (engine 0.10.0)', () => {
-    it('should allow specifying ai and ai_enabled in create payload', async () => {
+    it('should use the admin key when ai_enabled is set in a create payload', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
         data: { status: 200, data: 'index created' },
@@ -261,11 +276,11 @@ describe('IndexApi', () => {
           path: 'http://localhost:8000/index/ai-index',
           body: { index: { name: 'ai-index', ...indexConfig } },
         }),
-        'test-ingest-key'
+        'test-admin-key'
       );
     });
 
-    it('should allow partially patching ai_enabled', async () => {
+    it('should use the admin key when patching ai_enabled', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
         data: { status: 200, data: 'index updated' },
@@ -280,6 +295,24 @@ describe('IndexApi', () => {
           method: 'PATCH',
           body: { ai_enabled: false },
         }),
+        'test-admin-key'
+      );
+    });
+
+    it('should still use the ingest key when only ai config (without ai_enabled) is patched', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'index updated' },
+        headers: {},
+      });
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      await api.update(createIndexName('ai-index'), {
+        ai: { llm_provider: 'openai' as const, llm_api_key: 'sk-abc' },
+      });
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({ method: 'PATCH' }),
         'test-ingest-key'
       );
     });

@@ -74,7 +74,7 @@ export interface AIConfig {
   /** Configuration for search summary generation */
   readonly search_summary?: SearchSummaryConfig;
   /** The LLM provider to use */
-  readonly llm_provider: LLMProvider | string;
+  readonly llm_provider: LLMProvider | (string & {});
   /** AWS region for Bedrock provider */
   readonly llm_region?: string;
   /** Base URL for Ollama, llama.cpp server mode, or OpenAI-compatible APIs */

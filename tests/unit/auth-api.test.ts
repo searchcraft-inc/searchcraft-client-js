@@ -242,5 +242,38 @@ describe('AuthApi', () => {
         'test-admin-key'
       );
     });
+
+    it('should percent-encode the index name in the path', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: [sampleAuthKey],
+        headers: {},
+      });
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      await api.listIndexKeys(createIndexName('my index/slash'));
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/index/my%20index%2Fslash',
+        }),
+        'test-admin-key'
+      );
+    });
+
+    it('should propagate errors from the http client', async () => {
+      vi.mocked(mockHttpClient.request).mockRejectedValueOnce(new Error('not found'));
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      await expect(api.listIndexKeys(createIndexName('missing'))).rejects.toThrow('not found');
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/index/missing',
+        }),
+        'test-admin-key'
+      );
+    });
   });
 });
