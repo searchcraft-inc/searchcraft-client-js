@@ -8,6 +8,7 @@ export { AuthApi } from './api/auth.js';
 export { FederationApi } from './api/federations.js';
 export { IndexApi } from './api/indices.js';
 export { MeasureApi } from './api/measure.js';
+export { SearchApi } from './api/search.js';
 export { StopwordsApi } from './api/stopwords.js';
 export { SynonymsApi } from './api/synonyms.js';
 export { TransactionApi } from './api/transactions.js';
@@ -18,6 +19,9 @@ export type { HttpClient } from './core/http.js';
 export { createHttpClient } from './core/http.js';
 // Export types
 export type {
+  // AI types (engine 0.10.0+)
+  AICapabilities,
+  AIConfig,
   AllIndexStatsResponse,
   // Common types
   ApiKey,
@@ -44,11 +48,16 @@ export type {
   FieldConfig,
   // Index configuration types
   FieldType,
+  HttpStreamResponse,
+  IndexCapabilities,
   IndexConfig,
   IndexListResponse,
   IndexName,
   IndexOperationResponse,
   IndexStats,
+  KeywordRule,
+  KnownMeasureEventName,
+  LLMProvider,
   // Measure types
   MeasureDashboardSummary,
   MeasureEventName,
@@ -56,7 +65,9 @@ export type {
   MeasureRequest,
   MeasureRequestProperties,
   MeasureRequestUser,
+  MeasureUserType,
   OccurMode,
+  PromptInstruction,
   QueryMode,
   QueryWithOccur,
   SearchcraftConfig,
@@ -67,8 +78,14 @@ export type {
   SearchRequest,
   SearchResponse,
   SearchResponseData,
+  SearchSummaryConfig,
   SortDirection,
   StopwordOperationResponse,
+  SummaryDelta,
+  SummaryDone,
+  SummaryError,
+  SummaryMetadata,
+  SummaryStreamEvent,
   SynonymOperationResponse,
   SynonymsMap,
   UpdateAuthKeyRequest,

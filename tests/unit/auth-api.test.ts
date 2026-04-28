@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthApi } from '../../src/api/auth';
 import type { HttpClient } from '../../src/core/http';
 import type { AuthKey, CreateAuthKeyRequest, UpdateAuthKeyRequest } from '../../src/types/index';
-import { createApiKey, createFederationName } from '../../src/types/index';
+import { createApiKey, createFederationName, createIndexName } from '../../src/types/index';
 
 describe('AuthApi', () => {
   const mockConfig = {
@@ -216,6 +216,61 @@ describe('AuthApi', () => {
         expect.objectContaining({
           method: 'GET',
           path: 'http://localhost:8000/auth/federation/my-federation',
+        }),
+        'test-admin-key'
+      );
+    });
+  });
+
+  describe('listIndexKeys', () => {
+    it('should list index keys using GET /auth/index/:index_name with admin key', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: [sampleAuthKey],
+        headers: {},
+      });
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      const result = await api.listIndexKeys(createIndexName('products'));
+
+      expect(result).toEqual([sampleAuthKey]);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/index/products',
+        }),
+        'test-admin-key'
+      );
+    });
+
+    it('should percent-encode the index name in the path', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: [sampleAuthKey],
+        headers: {},
+      });
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      await api.listIndexKeys(createIndexName('my index/slash'));
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/index/my%20index%2Fslash',
+        }),
+        'test-admin-key'
+      );
+    });
+
+    it('should propagate errors from the http client', async () => {
+      vi.mocked(mockHttpClient.request).mockRejectedValueOnce(new Error('not found'));
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      await expect(api.listIndexKeys(createIndexName('missing'))).rejects.toThrow('not found');
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/index/missing',
         }),
         'test-admin-key'
       );
