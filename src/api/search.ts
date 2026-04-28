@@ -10,8 +10,42 @@ import type {
   SearchcraftConfig,
   SearchRequest,
   SearchResponse,
+  SummaryStreamEvent,
 } from '../types/index.js';
+import { parseSseStream } from '../utils/sse.js';
 import { validateLimit, validateOffset } from '../utils/validators.js';
+
+type SummaryEventType = SummaryStreamEvent['type'];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const validateSummaryEvent = (type: SummaryEventType, data: unknown): SummaryStreamEvent | null => {
+  if (!isRecord(data)) return null;
+
+  switch (type) {
+    case 'metadata':
+      if (typeof data.results_count === 'number' && typeof data.cached === 'boolean') {
+        return { type, data: { results_count: data.results_count, cached: data.cached } };
+      }
+      return null;
+    case 'delta':
+      if (typeof data.content === 'string') {
+        return { type, data: { content: data.content } };
+      }
+      return null;
+    case 'done':
+      if (typeof data.results_count === 'number') {
+        return { type, data: { results_count: data.results_count } };
+      }
+      return null;
+    case 'error':
+      if (typeof data.message === 'string') {
+        return { type, data: { message: data.message } };
+      }
+      return null;
+  }
+};
 
 /**
  * Search API class
@@ -62,6 +96,89 @@ export class SearchApi {
     );
 
     return response.data;
+  }
+
+  /**
+   * Streams an AI-generated summary of search results for the given index.
+   * Uses POST /index/:index_name/search/summary (Server-Sent Events).
+   * Added in engine 0.10.0. Requires that AI features are enabled for the
+   * index and that the authentication key has LLM summary permissions.
+   * The returned async iterable yields tagged events as the server produces
+   * them: a single `metadata` event, zero or more `delta` events, and
+   * a final `done` or `error` event. Malformed SSE frames are surfaced as
+   * synthetic `error` events instead of terminating the stream.
+   * @param indexName - The name of the index to summarise search results for.
+   * @param request - The search request used to retrieve candidate documents.
+   * @returns An async iterable of {@link SummaryStreamEvent}s.
+   * @throws {ValidationError} When `limit` exceeds 200 or `offset` is negative.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks summary permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the initial request times out or a network failure occurs.
+   * @example
+   * for await (const event of client.search.searchSummary('products', { query: { fuzzy: { ctx: 'laptop' } } })) {
+   *   if (event.type === 'delta') process.stdout.write(event.data.content);
+   * }
+   */
+  async *searchSummary(
+    indexName: IndexName,
+    request: SearchRequest
+  ): AsyncIterable<SummaryStreamEvent> {
+    if (request.limit !== undefined) {
+      validateLimit(request.limit);
+    }
+    if (request.offset !== undefined) {
+      validateOffset(request.offset);
+    }
+
+    const apiKey = getApiKey(this.config, 'read');
+    const path = `${this.config.endpointUrl}/index/${indexName}/search/summary`;
+
+    const response = await this.httpClient.stream(
+      {
+        method: 'POST',
+        path,
+        body: request,
+        timeout: this.config.timeout,
+      },
+      apiKey
+    );
+
+    for await (const event of parseSseStream(response.body)) {
+      const eventType = event.event ?? 'message';
+      if (
+        eventType !== 'metadata' &&
+        eventType !== 'delta' &&
+        eventType !== 'done' &&
+        eventType !== 'error'
+      ) {
+        continue;
+      }
+
+      let data: unknown;
+      try {
+        data = event.data ? JSON.parse(event.data) : {};
+      } catch {
+        yield {
+          type: 'error',
+          data: { message: `Invalid JSON in ${eventType} event: ${event.data}` },
+        };
+        continue;
+      }
+
+      const validated = validateSummaryEvent(eventType, data);
+      if (validated === null) {
+        yield {
+          type: 'error',
+          data: {
+            message: `Malformed ${eventType} payload: ${JSON.stringify(data)}`,
+          },
+        };
+        continue;
+      }
+      yield validated;
+    }
   }
 
   /**

@@ -99,3 +99,13 @@ export interface HttpResponse<T = unknown> {
   readonly data: T;
   readonly headers: Readonly<Record<string, string>>;
 }
+
+/**
+ * Streaming HTTP response with a raw body stream.
+ * Used for Server-Sent Events endpoints like /index/:index/search/summary.
+ */
+export interface HttpStreamResponse {
+  readonly status: number;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly body: ReadableStream<Uint8Array>;
+}

@@ -8,6 +8,7 @@ describe('IndexApi', () => {
     endpointUrl: 'http://localhost:8000',
     readKey: createApiKey('test-read-key'),
     ingestKey: createApiKey('test-ingest-key'),
+    adminKey: createApiKey('test-admin-key'),
     timeout: 30000,
   };
 
@@ -101,7 +102,7 @@ describe('IndexApi', () => {
         expect.objectContaining({
           method: 'PATCH',
           path: 'http://localhost:8000/index/test-index',
-          body: { index: partialConfig },
+          body: partialConfig,
         }),
         'test-ingest-key'
       );
@@ -121,7 +122,7 @@ describe('IndexApi', () => {
 
       expect(result).toBe('index updated');
       expect(mockHttpClient.request).toHaveBeenCalledWith(
-        expect.objectContaining({ method: 'PATCH', body: { index: {} } }),
+        expect.objectContaining({ method: 'PATCH', body: {} }),
         'test-ingest-key'
       );
     });
@@ -195,6 +196,124 @@ describe('IndexApi', () => {
           path: 'http://localhost:8000/index/test-index/stats',
         }),
         'test-read-key'
+      );
+    });
+  });
+
+  describe('getCapabilities', () => {
+    it('should GET /index/:index/capabilities and return AI capability flags', async () => {
+      const mockData = {
+        ai: {
+          enabled: true,
+          searchSummaryConfigured: true,
+          llmProviderConfigured: true,
+          llmModelConfigured: false,
+        },
+      };
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: mockData },
+        headers: {},
+      });
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      const result = await api.getCapabilities(createIndexName('products'));
+
+      expect(result).toEqual(mockData);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/index/products/capabilities',
+        }),
+        'test-read-key'
+      );
+    });
+
+    it('should propagate errors from the http client', async () => {
+      vi.mocked(mockHttpClient.request).mockRejectedValueOnce(new Error('not found'));
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      await expect(api.getCapabilities(createIndexName('missing'))).rejects.toThrow('not found');
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/index/missing/capabilities',
+        }),
+        'test-read-key'
+      );
+    });
+  });
+
+  describe('AI config on create/update (engine 0.10.0)', () => {
+    it('should use the admin key when ai_enabled is set in a create payload', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'index created' },
+        headers: {},
+      });
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      const indexName = createIndexName('ai-index');
+      const indexConfig = {
+        search_fields: ['title'],
+        fields: {},
+        ai_enabled: true,
+        ai: {
+          llm_provider: 'anthropic' as const,
+          llm_api_key: 'sk-123',
+          search_summary: {
+            model: 'claude-sonnet-4-6',
+            temperature: 0.2,
+          },
+        },
+      };
+
+      await api.create(indexName, indexConfig);
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'PUT',
+          path: 'http://localhost:8000/index/ai-index',
+          body: { index: { name: 'ai-index', ...indexConfig } },
+        }),
+        'test-admin-key'
+      );
+    });
+
+    it('should use the admin key when patching ai_enabled', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'index updated' },
+        headers: {},
+      });
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      await api.update(createIndexName('ai-index'), { ai_enabled: false });
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'PATCH',
+          body: { ai_enabled: false },
+        }),
+        'test-admin-key'
+      );
+    });
+
+    it('should still use the ingest key when only ai config (without ai_enabled) is patched', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'index updated' },
+        headers: {},
+      });
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      await api.update(createIndexName('ai-index'), {
+        ai: { llm_provider: 'openai' as const, llm_api_key: 'sk-abc' },
+      });
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({ method: 'PATCH' }),
+        'test-ingest-key'
       );
     });
   });

@@ -7,6 +7,7 @@ import type { HttpClient } from '../core/http.js';
 import type {
   AllIndexStatsResponse,
   ApiResponse,
+  IndexCapabilities,
   IndexConfig,
   IndexListResponse,
   IndexName,
@@ -72,16 +73,18 @@ export class IndexApi {
    * Creates a new index with the given configuration.
    * Uses PUT /index/:index with body `{ index: { name, ...config } }`.
    * The `name` field is automatically populated from the `indexName` parameter.
+   * When `ai_enabled` is present in the config, the admin key is used because
+   * toggling AI features requires admin-level authorization (engine 0.10.0+).
    * @param indexName - The name of the new index.
    * @param indexConfig - The configuration for the new index.
    * @returns A promise resolving to the operation result.
-   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration, or when `ai_enabled` is set and `adminKey` is not configured.
    * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
    */
   async create(indexName: IndexName, indexConfig: IndexConfig): Promise<IndexOperationResponse> {
-    const apiKey = getApiKey(this.config, 'write');
+    const apiKey = getApiKey(this.config, indexConfig.ai_enabled !== undefined ? 'admin' : 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
     const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(
@@ -99,11 +102,15 @@ export class IndexApi {
 
   /**
    * Updates an existing index with partial configuration changes.
-   * Uses PATCH /index/:index with body `{ index: partialConfig }`.
+   * Uses PATCH /index/:index with the partial config sent as the raw body
+   * (the engine deserializes the body directly into `IndexPatchPayload`,
+   * so the payload must NOT be wrapped in an `index` object).
+   * When `ai_enabled` is present in the patch, the admin key is used because
+   * toggling AI features requires admin-level authorization (engine 0.10.0+).
    * @param indexName - The name of the index to update.
    * @param indexConfig - A partial configuration object with the fields to update.
    * @returns A promise resolving to the operation result.
-   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration, or when `ai_enabled` is set and `adminKey` is not configured.
    * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
    * @throws {NotFoundError} When the specified index does not exist.
    * @throws {ApiError} When the server returns a non-2xx response.
@@ -113,14 +120,14 @@ export class IndexApi {
     indexName: IndexName,
     indexConfig: Partial<IndexConfig>
   ): Promise<IndexOperationResponse> {
-    const apiKey = getApiKey(this.config, 'write');
+    const apiKey = getApiKey(this.config, indexConfig.ai_enabled !== undefined ? 'admin' : 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
     const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(
       {
         method: 'PATCH',
         path,
-        body: { index: indexConfig },
+        body: indexConfig,
         timeout: this.config.timeout,
       },
       apiKey
@@ -189,6 +196,30 @@ export class IndexApi {
     const path = `${this.config.endpointUrl}/index/${indexName}/stats`;
 
     const response = await this.httpClient.request<ApiResponse<IndexStats>>(
+      { method: 'GET', path, timeout: this.config.timeout },
+      apiKey
+    );
+
+    return response.data.data;
+  }
+
+  /**
+   * Gets AI capability and configuration status for an index.
+   * Uses GET /index/:index_name/capabilities
+   * Added in engine 0.10.0. The server does not require authentication for
+   * this endpoint, but this client always sends the configured read key.
+   * @param indexName - The name of the index to inspect.
+   * @returns A promise resolving to the AI capability flags for the index.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async getCapabilities(indexName: IndexName): Promise<IndexCapabilities> {
+    const apiKey = getApiKey(this.config, 'read');
+    const path = `${this.config.endpointUrl}/index/${indexName}/capabilities`;
+
+    const response = await this.httpClient.request<ApiResponse<IndexCapabilities>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );

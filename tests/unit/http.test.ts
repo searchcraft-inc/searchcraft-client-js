@@ -84,6 +84,56 @@ describe('HttpClient', () => {
       );
     });
 
+    it('should set a User-Agent header in Node.js environments', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({}),
+      });
+
+      const client = createHttpClient();
+      await client.request(
+        { method: 'GET', path: 'http://localhost:8000/test' },
+        createApiKey('test-key')
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8000/test',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'User-Agent': expect.stringMatching(/^searchcraft-client-js\/\d+\.\d+\.\d+/),
+          }),
+        })
+      );
+    });
+
+    it('should allow custom headers to override User-Agent', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({}),
+      });
+
+      const client = createHttpClient();
+      await client.request(
+        {
+          method: 'GET',
+          path: 'http://localhost:8000/test',
+          headers: { 'User-Agent': 'my-app/1.0' },
+        },
+        createApiKey('test-key')
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8000/test',
+        expect.objectContaining({
+          headers: expect.objectContaining({ 'User-Agent': 'my-app/1.0' }),
+        })
+      );
+    });
+
     it('should include custom headers', async () => {
       const mockResponse = { data: {} };
       mockFetch.mockResolvedValueOnce({
@@ -268,6 +318,123 @@ describe('HttpClient', () => {
           createApiKey('test-key')
         )
       ).rejects.toThrow('Custom error message');
+    });
+  });
+
+  describe('stream', () => {
+    function makeBodyStream(body: string): ReadableStream<Uint8Array> {
+      const encoder = new TextEncoder();
+      return new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(encoder.encode(body));
+          controller.close();
+        },
+      });
+    }
+
+    it('returns a readable stream for SSE responses', async () => {
+      const sse = 'event: delta\ndata: hi\n\n';
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/event-stream' }),
+        body: makeBodyStream(sse),
+      });
+
+      const client = createHttpClient();
+      const response = await client.stream(
+        { method: 'POST', path: 'http://localhost:8000/stream', body: { q: 1 } },
+        createApiKey('test-key')
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body).toBeDefined();
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value);
+      }
+      expect(text).toBe(sse);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:8000/stream',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            Authorization: 'test-key',
+            Accept: 'text/event-stream',
+          }),
+          body: JSON.stringify({ q: 1 }),
+        })
+      );
+    });
+
+    it('throws AuthenticationError on 401 and does not return a body', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        headers: new Headers(),
+        json: async () => ({ message: 'Unauthorized' }),
+        text: async () => 'Unauthorized',
+      });
+
+      const client = createHttpClient();
+      await expect(
+        client.stream({ method: 'POST', path: 'http://localhost:8000/stream' }, createApiKey('bad'))
+      ).rejects.toThrow(AuthenticationError);
+    });
+
+    it('throws NotFoundError on 404', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        headers: new Headers(),
+        json: async () => ({ message: 'not found' }),
+        text: async () => 'not found',
+      });
+
+      const client = createHttpClient();
+      await expect(
+        client.stream({ method: 'POST', path: 'http://localhost:8000/stream' }, createApiKey('k'))
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('throws ApiError on other HTTP errors', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        headers: new Headers(),
+        json: async () => ({ message: 'boom' }),
+        text: async () => 'boom',
+      });
+
+      const client = createHttpClient();
+      await expect(
+        client.stream({ method: 'POST', path: 'http://localhost:8000/stream' }, createApiKey('k'))
+      ).rejects.toThrow(ApiError);
+    });
+
+    it('throws NetworkError on timeout', async () => {
+      mockFetch.mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            const err = new Error('aborted');
+            err.name = 'AbortError';
+            setTimeout(() => reject(err), 5);
+          })
+      );
+
+      const client = createHttpClient();
+      await expect(
+        client.stream(
+          { method: 'POST', path: 'http://localhost:8000/stream', timeout: 1 },
+          createApiKey('k')
+        )
+      ).rejects.toThrow(NetworkError);
     });
   });
 });
