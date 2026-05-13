@@ -12,6 +12,7 @@ import type {
   MeasureDashboardSummary,
   MeasureOperationResponse,
   MeasureRequest,
+  MeasureStatus,
   SearchcraftConfig,
 } from '../types/index.js';
 
@@ -23,6 +24,29 @@ export class MeasureApi {
     private readonly config: Readonly<SearchcraftConfig>,
     private readonly httpClient: HttpClient
   ) {}
+
+  /**
+   * Reports whether analytics are configured on the server.
+   * Uses GET /measure/status. This endpoint is unauthenticated and works with
+   * or without an API key, like `GET /healthcheck`. When `enabled` is `false`,
+   * all other `/measure/*` endpoints are no-ops; call this first to decide
+   * whether the other measure endpoints will do anything.
+   * @returns A promise resolving to the measure status (`{ enabled: boolean }`).
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async getStatus(): Promise<MeasureStatus> {
+    const apiKey = getApiKey(this.config, 'read');
+    const path = `${this.config.endpointUrl}/measure/status`;
+
+    const response = await this.httpClient.request<MeasureStatus>(
+      { method: 'GET', path, timeout: this.config.timeout },
+      apiKey
+    );
+
+    return response.data;
+  }
 
   /**
    * Returns measurement dashboard summary data.

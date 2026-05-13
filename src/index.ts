@@ -65,6 +65,7 @@ export type {
   MeasureRequest,
   MeasureRequestProperties,
   MeasureRequestUser,
+  MeasureStatus,
   MeasureUserType,
   OccurMode,
   PromptInstruction,

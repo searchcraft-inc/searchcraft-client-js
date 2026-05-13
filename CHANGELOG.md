@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- New: `MeasureApi.getStatus()` wraps the unauthenticated `GET /measure/status` and returns `{ enabled: boolean }`, indicating whether analytics are configured on the server. When `enabled` is `false`, the other `/measure/*` endpoints are no-ops.
+- New: `MeasureStatus` type.
+
 ## 0.2.0
 
 - Support for Searchcraft engine 0.10.0.

@@ -101,6 +101,7 @@ export type {
   MeasureRequest,
   MeasureRequestProperties,
   MeasureRequestUser,
+  MeasureStatus,
   MeasureUserType,
 } from './measure.js';
 // Search types
