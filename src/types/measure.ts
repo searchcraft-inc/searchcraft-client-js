@@ -84,6 +84,16 @@ export interface MeasureRequest {
 }
 
 /**
+ * Response from GET /measure/status.
+ * Reports whether analytics are configured on the server.
+ * When `enabled` is `false`, all other `/measure/*` endpoints are no-ops.
+ */
+export interface MeasureStatus {
+  /** `true` when analytics are configured on the server. */
+  readonly enabled: boolean;
+}
+
+/**
  * Response from GET /measure/dashboard/summary
  */
 export type MeasureDashboardSummary = Record<string, unknown>;
