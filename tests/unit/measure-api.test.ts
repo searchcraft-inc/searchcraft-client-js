@@ -28,6 +28,42 @@ describe('MeasureApi', () => {
     },
   };
 
+  describe('getStatus', () => {
+    it('should return the measure status', async () => {
+      const mockData = { enabled: true };
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: mockData,
+        headers: {},
+      });
+
+      const api = new MeasureApi(mockConfig, mockHttpClient);
+      const result = await api.getStatus();
+
+      expect(result).toEqual(mockData);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/measure/status',
+        }),
+        'test-read-key'
+      );
+    });
+
+    it('should report when analytics are disabled', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { enabled: false },
+        headers: {},
+      });
+
+      const api = new MeasureApi(mockConfig, mockHttpClient);
+      const result = await api.getStatus();
+
+      expect(result).toEqual({ enabled: false });
+    });
+  });
+
   describe('getDashboardSummary', () => {
     it('should return the dashboard summary', async () => {
       const mockData = { total_searches: 100, total_clicks: 50 };
