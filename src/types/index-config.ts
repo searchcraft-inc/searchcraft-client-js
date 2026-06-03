@@ -7,7 +7,16 @@ import type { AIConfig } from './ai.js';
 /**
  * Supported field types in Searchcraft indices
  */
-export type FieldType = 'text' | 'facet' | 'bool' | 'f64' | 'u64' | 'i64' | 'datetime' | 'bytes';
+export type FieldType =
+  | 'text'
+  | 'facet'
+  | 'bool'
+  | 'f64'
+  | 'u64'
+  | 'i64'
+  | 'datetime'
+  | 'bytes'
+  | 'json';
 
 /**
  * Configuration for a single field in an index
@@ -21,6 +30,17 @@ export interface FieldConfig {
   readonly required?: boolean;
   /** For datetime fields: "seconds", "milliseconds", "microseconds", "nanoseconds" */
   readonly precision?: string;
+  /**
+   * For json fields: how string values within the JSON are indexed.
+   * "raw" (exact, case-sensitive), "lowercase" (case-insensitive exact),
+   * or "default" (tokenized full-text search). Defaults to "raw".
+   */
+  readonly tokenizer?: string;
+  /**
+   * For json fields: treat dots in JSON keys as nested-object separators.
+   * Defaults to true.
+   */
+  readonly expand_dots?: boolean;
 }
 
 /**
