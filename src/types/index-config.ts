@@ -35,7 +35,7 @@ export interface FieldConfig {
    * "raw" (exact, case-sensitive), "lowercase" (case-insensitive exact),
    * or "default" (tokenized full-text search). Defaults to "raw".
    */
-  readonly tokenizer?: string;
+  readonly tokenizer?: 'raw' | 'lowercase' | 'default';
   /**
    * For json fields: treat dots in JSON keys as nested-object separators.
    * Defaults to true.
