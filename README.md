@@ -333,6 +333,15 @@ await client.indices.create(indexName, {
   fields: {
     title: { type: 'text', indexed: true, stored: true },
     body: { type: 'text', indexed: true, stored: true },
+    // json fields store nested objects and are queried via dotted paths
+    // (e.g. metadata.author:tolkien). tokenizer/expand_dots are json-specific.
+    metadata: {
+      type: 'json',
+      stored: true,
+      indexed: true,
+      tokenizer: 'raw',
+      expand_dots: true,
+    },
   },
 });
 
