@@ -7,16 +7,7 @@ import type { AIConfig } from './ai.js';
 /**
  * Supported field types in Searchcraft indices
  */
-export type FieldType =
-  | 'text'
-  | 'facet'
-  | 'bool'
-  | 'f64'
-  | 'u64'
-  | 'i64'
-  | 'datetime'
-  | 'bytes'
-  | 'json';
+export type FieldType = 'text' | 'facet' | 'bool' | 'f64' | 'u64' | 'i64' | 'datetime' | 'json';
 
 /**
  * Configuration for a single field in an index
