@@ -8,7 +8,9 @@
 
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
+import { unwrapData } from '../core/http.js';
 import type {
+  ApiResponse,
   IndexName,
   SearchcraftConfig,
   SynonymOperationResponse,
@@ -39,12 +41,12 @@ export class SynonymsApi {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/index/${indexName}/synonyms`;
 
-    const response = await this.httpClient.request<SynonymsMap>(
+    const response = await this.httpClient.request<ApiResponse<SynonymsMap>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -65,12 +67,12 @@ export class SynonymsApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/synonyms`;
 
-    const response = await this.httpClient.request<SynonymOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<SynonymOperationResponse>>(
       { method: 'POST', path, body: synonyms, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -89,12 +91,12 @@ export class SynonymsApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/synonyms`;
 
-    const response = await this.httpClient.request<SynonymOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<SynonymOperationResponse>>(
       { method: 'DELETE', path, body: synonyms, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -112,11 +114,11 @@ export class SynonymsApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/synonyms/all`;
 
-    const response = await this.httpClient.request<SynonymOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<SynonymOperationResponse>>(
       { method: 'DELETE', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 }

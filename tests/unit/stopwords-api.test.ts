@@ -13,6 +13,7 @@ describe('StopwordsApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   describe('get', () => {
@@ -20,7 +21,7 @@ describe('StopwordsApi', () => {
       const mockData = ['the', 'a', 'is', 'are'];
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 
@@ -41,7 +42,7 @@ describe('StopwordsApi', () => {
     it('should return an empty array when there are no stopwords', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [],
+        data: { status: 200, data: [] },
         headers: {},
       });
 
@@ -57,7 +58,7 @@ describe('StopwordsApi', () => {
     it('should add stopwords to an index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'stopwords added',
+        data: { status: 200, data: 'stopwords added' },
         headers: {},
       });
 
@@ -83,7 +84,7 @@ describe('StopwordsApi', () => {
     it('should delete specific stopwords from an index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'stopwords deleted',
+        data: { status: 200, data: 'stopwords deleted' },
         headers: {},
       });
 
@@ -109,7 +110,7 @@ describe('StopwordsApi', () => {
     it('should delete all stopwords from an index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'all stopwords deleted',
+        data: { status: 200, data: 'all stopwords deleted' },
         headers: {},
       });
 
@@ -125,6 +126,28 @@ describe('StopwordsApi', () => {
           path: 'http://localhost:8000/index/test-index/stopwords/all',
         }),
         'test-ingest-key'
+      );
+    });
+  });
+
+  describe('getDefaults', () => {
+    it('should get the engine default stopwords for the index language', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: ['the', 'of'] },
+        headers: {},
+      });
+
+      const api = new StopwordsApi(mockConfig, mockHttpClient);
+      const result = await api.getDefaults(createIndexName('test-index'));
+
+      expect(result).toEqual(['the', 'of']);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/index/test-index/stopwords/default',
+        }),
+        'test-read-key'
       );
     });
   });

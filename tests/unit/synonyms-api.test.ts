@@ -13,6 +13,7 @@ describe('SynonymsApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   describe('get', () => {
@@ -20,7 +21,7 @@ describe('SynonymsApi', () => {
       const mockData = { nyc: ['new york city'], usa: ['united states'] };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 
@@ -41,7 +42,7 @@ describe('SynonymsApi', () => {
     it('should return an empty map when there are no synonyms', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: {},
+        data: { status: 200, data: {} },
         headers: {},
       });
 
@@ -57,7 +58,7 @@ describe('SynonymsApi', () => {
     it('should add synonyms to an index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'synonyms added',
+        data: { status: 200, data: 'synonyms added' },
         headers: {},
       });
 
@@ -83,7 +84,7 @@ describe('SynonymsApi', () => {
     it('should delete specific synonyms from an index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'synonyms deleted',
+        data: { status: 200, data: 'synonyms deleted' },
         headers: {},
       });
 
@@ -109,7 +110,7 @@ describe('SynonymsApi', () => {
     it('should delete all synonyms from an index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'all synonyms deleted',
+        data: { status: 200, data: 'all synonyms deleted' },
         headers: {},
       });
 

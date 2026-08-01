@@ -1,6 +1,6 @@
 {
   "name": "@searchcraft/client",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "TypeScript client library for the Searchcraft API",
   "type": "module",
   "keywords": [
@@ -48,22 +48,23 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "typecheck": "tsc --noEmit",
+    "biome:migrate": "biome migrate --write",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "npm run build",
     "prepare": "husky"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.3",
-    "@types/node": "^22.10.2",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@biomejs/biome": "2.5.6",
+    "@types/node": "^26.1.2",
+    "@vitest/coverage-v8": "^4.1.10",
     "husky": "^9.1.7",
-    "terser": "^5.44.1",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vite-plugin-dts": "^4.3.0",
-    "vitest": "^4.0.18"
+    "terser": "^5.49.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.2.0",
+    "vite-plugin-dts": "^5.0.3",
+    "vitest": "^4.1.10"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

@@ -71,7 +71,8 @@ export class IndexApi {
 
   /**
    * Creates a new index with the given configuration.
-   * Uses PUT /index/:index with body `{ index: { name, ...config } }`.
+   * Uses POST /index - PUT /index/:index is a replace and 404s for an index
+   * that does not exist yet (see {@link replace}). with body `{ index: { name, ...config } }`.
    * The `name` field is automatically populated from the `indexName` parameter.
    * When `ai_enabled` is present in the config, the admin key is used because
    * toggling AI features requires admin-level authorization (engine 0.10.0+).
@@ -83,15 +84,56 @@ export class IndexApi {
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
    */
-  async create(indexName: IndexName, indexConfig: IndexConfig): Promise<IndexOperationResponse> {
-    const apiKey = getApiKey(this.config, indexConfig.ai_enabled !== undefined ? 'admin' : 'write');
+  async create(
+    indexName: IndexName,
+    indexConfig: IndexConfig,
+    options: { readonly overrideIfExists?: boolean } = {}
+  ): Promise<IndexOperationResponse> {
+    const apiKey = getApiKey(this.config, indexConfig.ai_enabled === undefined ? 'write' : 'admin');
+    const path = `${this.config.endpointUrl}/index`;
+
+    const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(
+      {
+        method: 'POST',
+        path,
+        body: {
+          index: { name: indexName, ...indexConfig },
+          override_if_exists: options.overrideIfExists ?? false,
+        },
+        timeout: this.config.timeout,
+      },
+      apiKey
+    );
+
+    return response.data.data;
+  }
+
+  /**
+   * Replaces the full schema of an index that already exists.
+   * Uses PUT /index/:index. Unlike {@link update} this is a whole-schema
+   * replacement, so anything absent from `indexConfig` reverts to its default.
+   * `ai_enabled` is preserved unless set explicitly.
+   * @param indexName - The name of the index to replace. It must already exist.
+   * @param indexConfig - The replacement configuration.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration, or when `ai_enabled` is set and `adminKey` is not configured.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist - use {@link create} for a new one.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async replace(indexName: IndexName, indexConfig: IndexConfig): Promise<IndexOperationResponse> {
+    const apiKey = getApiKey(this.config, indexConfig.ai_enabled === undefined ? 'write' : 'admin');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
     const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(
       {
         method: 'PUT',
         path,
-        body: { index: { name: indexName, ...indexConfig } },
+        body: {
+          index: { name: indexName, ...indexConfig },
+          override_if_exists: true,
+        },
         timeout: this.config.timeout,
       },
       apiKey
@@ -107,6 +149,18 @@ export class IndexApi {
    * so the payload must NOT be wrapped in an `index` object).
    * When `ai_enabled` is present in the patch, the admin key is used because
    * toggling AI features requires admin-level authorization (engine 0.10.0+).
+   *
+   * Two limits come from the engine's patch semantics:
+   * - `fields` is **not patchable**. The engine carries the existing schema
+   *   fields over verbatim, so a `fields` key here is accepted and silently
+   *   ignored. Use {@link replace} to change the schema.
+   * - `search_fields`, `weight_multipliers` and `language` cannot be *cleared*.
+   *   The engine treats an empty value as "leave unchanged", so passing `[]`,
+   *   `{}` or `''` is a no-op rather than a reset. Use {@link replace} to drop
+   *   them.
+   *
+   * Everything else follows normal patch semantics: omit a field to leave it
+   * alone. `time_decay_field` can be cleared by passing an empty string.
    * @param indexName - The name of the index to update.
    * @param indexConfig - A partial configuration object with the fields to update.
    * @returns A promise resolving to the operation result.
@@ -120,7 +174,7 @@ export class IndexApi {
     indexName: IndexName,
     indexConfig: Partial<IndexConfig>
   ): Promise<IndexOperationResponse> {
-    const apiKey = getApiKey(this.config, indexConfig.ai_enabled !== undefined ? 'admin' : 'write');
+    const apiKey = getApiKey(this.config, indexConfig.ai_enabled === undefined ? 'write' : 'admin');
     const path = `${this.config.endpointUrl}/index/${indexName}`;
 
     const response = await this.httpClient.request<ApiResponse<IndexOperationResponse>>(

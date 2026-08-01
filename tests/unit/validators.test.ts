@@ -64,8 +64,11 @@ describe('validators', () => {
       expect(validateLimit(200)).toBe(200);
     });
 
-    it('should reject limits over 200', () => {
-      expect(() => validateLimit(201)).toThrow(ValidationError);
+    it('should accept limits over 200, which the engine clamps server-side', () => {
+      // SEARCHCRAFT_MAX_RESULT_LIMIT is operator-configurable and the engine
+      // clamps rather than rejecting, so the client must not second-guess it.
+      expect(validateLimit(201)).toBe(201);
+      expect(validateLimit(5000)).toBe(5000);
     });
 
     it('should reject zero and negative limits', () => {

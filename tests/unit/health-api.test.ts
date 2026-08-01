@@ -12,6 +12,7 @@ describe('HealthApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   describe('check', () => {
@@ -23,6 +24,7 @@ describe('HealthApi', () => {
 
       const mockResponse = {
         status: 200,
+        headers: {},
         data: mockData,
       };
 

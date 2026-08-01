@@ -11,16 +11,30 @@ export interface FederationIndexConfig {
 }
 
 /**
+ * Request payload to create or update a federation.
+ */
+export interface FederationRequest {
+  readonly name: string;
+  readonly friendly_name: string;
+  readonly created_by?: string;
+  readonly last_modified_by?: string;
+  readonly organization_id?: string;
+  readonly index_configurations: ReadonlyArray<FederationIndexConfig>;
+}
+
+/**
  * Full federation configuration as returned by the API
  */
 export interface Federation {
   readonly name: string;
   readonly friendly_name: string;
   readonly created_at: string;
-  readonly created_by: string;
+  /** Identifier of the creating principal, when known. */
+  readonly created_by?: string | null;
   readonly last_modified: string;
-  readonly last_modified_by: string;
-  readonly organization_id: string;
+  readonly last_modified_by?: string | null;
+  /** Owning organization, when scoped to one. */
+  readonly organization_id?: string | null;
   readonly index_configurations: FederationIndexConfig[];
 }
 

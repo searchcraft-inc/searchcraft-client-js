@@ -26,6 +26,8 @@ export type {
   CreateAuthKeyRequest,
   UpdateAuthKeyRequest,
 } from './auth.js';
+// Auth permission bitmask helpers (self-hosted only)
+export { hasPermissions, permissionPresets, permissions } from './auth.js';
 // Common types
 export type {
   ApiErrorResponse,
@@ -75,6 +77,7 @@ export type {
   Federation,
   FederationIndexConfig,
   FederationOperationResponse,
+  FederationRequest,
   FederationStats,
 } from './federation.js';
 // Index configuration types
@@ -87,6 +90,7 @@ export type {
   IndexOperationResponse,
   IndexStats,
   IndexStatsEntry,
+  IngestionConfig,
   StopwordOperationResponse,
   SynonymOperationResponse,
   SynonymsMap,
@@ -95,9 +99,12 @@ export type {
 // Measure types
 export type {
   KnownMeasureEventName,
+  MeasureDashboardParams,
+  MeasureDashboardReport,
   MeasureDashboardSummary,
   MeasureEventName,
   MeasureOperationResponse,
+  MeasureQueryGranularity,
   MeasureRequest,
   MeasureRequestProperties,
   MeasureRequestUser,
@@ -112,7 +119,9 @@ export type {
   Facet,
   FacetPath,
   FieldQuery,
+  FieldSelector,
   FuzzyQuery,
+  MoreLikeThisQuery,
   QueryBuilderOptions,
   QueryWithOccur,
   SearchHit,
@@ -121,4 +130,5 @@ export type {
   SearchRequest,
   SearchResponse,
   SearchResponseData,
+  TermQuery,
 } from './search.js';

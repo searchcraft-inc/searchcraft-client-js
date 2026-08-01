@@ -14,6 +14,7 @@ describe('IndexApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   describe('list', () => {
@@ -58,7 +59,7 @@ describe('IndexApi', () => {
   });
 
   describe('create', () => {
-    it('should create an index with given configuration and inject name into body', async () => {
+    it('should create an index via POST /index with the name in the body', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
         data: { status: 200, data: 'index created' },
@@ -72,11 +73,67 @@ describe('IndexApi', () => {
       const result = await api.create(indexName, indexConfig);
 
       expect(result).toBe('index created');
+      // Creation is POST /index - PUT /index/:index is a replace and 404s for
+      // an index that does not exist yet.
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          path: 'http://localhost:8000/index',
+          body: {
+            index: { name: 'new-index', ...indexConfig },
+            override_if_exists: false,
+          },
+        }),
+        'test-ingest-key'
+      );
+    });
+
+    it('should set override_if_exists when asked to overwrite', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'index created' },
+        headers: {},
+      });
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      const indexName = createIndexName('new-index');
+
+      await api.create(indexName, {}, { overrideIfExists: true });
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          path: 'http://localhost:8000/index',
+          body: { index: { name: 'new-index' }, override_if_exists: true },
+        }),
+        'test-ingest-key'
+      );
+    });
+  });
+
+  describe('replace', () => {
+    it('should replace an index schema via PUT /index/:index', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'index schema replaced' },
+        headers: {},
+      });
+
+      const api = new IndexApi(mockConfig, mockHttpClient);
+      const indexName = createIndexName('existing-index');
+      const indexConfig = { language: 'en' };
+
+      const result = await api.replace(indexName, indexConfig);
+
+      expect(result).toBe('index schema replaced');
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'PUT',
-          path: 'http://localhost:8000/index/new-index',
-          body: { index: { name: 'new-index', ...indexConfig } },
+          path: 'http://localhost:8000/index/existing-index',
+          body: {
+            index: { name: 'existing-index', ...indexConfig },
+            override_if_exists: true,
+          },
         }),
         'test-ingest-key'
       );
@@ -272,9 +329,12 @@ describe('IndexApi', () => {
 
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
-          method: 'PUT',
-          path: 'http://localhost:8000/index/ai-index',
-          body: { index: { name: 'ai-index', ...indexConfig } },
+          method: 'POST',
+          path: 'http://localhost:8000/index',
+          body: {
+            index: { name: 'ai-index', ...indexConfig },
+            override_if_exists: false,
+          },
         }),
         'test-admin-key'
       );
