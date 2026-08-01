@@ -4,7 +4,9 @@
 
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
+import { unwrapData } from '../core/http.js';
 import type {
+  ApiResponse,
   DocumentDeleteResponse,
   DocumentOperationResponse,
   DocumentWithId,
@@ -45,7 +47,7 @@ export class DocumentApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents`;
 
-    const response = await this.httpClient.request<DocumentOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<DocumentOperationResponse>>(
       {
         method: 'POST',
         path,
@@ -55,7 +57,7 @@ export class DocumentApi {
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -79,7 +81,7 @@ export class DocumentApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents/query`;
 
-    const response = await this.httpClient.request<DocumentDeleteResponse>(
+    const response = await this.httpClient.request<ApiResponse<DocumentDeleteResponse>>(
       {
         method: 'DELETE',
         path,
@@ -95,7 +97,7 @@ export class DocumentApi {
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -130,7 +132,7 @@ export class DocumentApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents`;
 
-    const response = await this.httpClient.request<DocumentOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<DocumentOperationResponse>>(
       {
         method: 'POST',
         path,
@@ -140,7 +142,7 @@ export class DocumentApi {
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -168,7 +170,7 @@ export class DocumentApi {
     const path = `${this.config.endpointUrl}/index/${indexName}/documents`;
 
     // Delete by field term match for each ID
-    const response = await this.httpClient.request<DocumentDeleteResponse>(
+    const response = await this.httpClient.request<ApiResponse<DocumentDeleteResponse>>(
       {
         method: 'DELETE',
         path,
@@ -178,7 +180,36 @@ export class DocumentApi {
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
+  }
+
+  /**
+   * Deletes a document by Searchcraft's internal ID.
+   * Uses DELETE /index/:index/documents/:document_id
+   * The internal ID is the `document_id` on a search hit, as opposed to
+   * {@link delete}, which matches on your own `id` field.
+   * @param indexName - The name of the index to delete from.
+   * @param internalId - Searchcraft's internal document ID.
+   * @returns A promise resolving to the operation result.
+   * @throws {ConfigurationError} When `ingestKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key is invalid or lacks write permissions.
+   * @throws {NotFoundError} When the specified index does not exist.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async deleteByInternalId(
+    indexName: IndexName,
+    internalId: string
+  ): Promise<DocumentOperationResponse> {
+    const apiKey = getApiKey(this.config, 'write');
+    const path = `${this.config.endpointUrl}/index/${indexName}/documents/${internalId}`;
+
+    const response = await this.httpClient.request<ApiResponse<DocumentOperationResponse>>(
+      { method: 'DELETE', path, timeout: this.config.timeout },
+      apiKey
+    );
+
+    return unwrapData(response);
   }
 
   /**
@@ -196,7 +227,7 @@ export class DocumentApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents/all`;
 
-    const response = await this.httpClient.request<DocumentOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<DocumentOperationResponse>>(
       {
         method: 'DELETE',
         path,
@@ -205,7 +236,7 @@ export class DocumentApi {
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -224,7 +255,7 @@ export class DocumentApi {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/index/${indexName}/documents/${internalId}`;
 
-    const response = await this.httpClient.request<SearchHit<T>>(
+    const response = await this.httpClient.request<ApiResponse<SearchHit<T>>>(
       {
         method: 'GET',
         path,
@@ -233,6 +264,6 @@ export class DocumentApi {
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 }

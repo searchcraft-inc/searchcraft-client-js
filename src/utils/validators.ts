@@ -47,16 +47,18 @@ export const validateNonNegativeNumber = (value: unknown, fieldName: string): nu
 };
 
 /**
- * Validates a search `limit` value (must be a positive number no greater than 200).
+ * Validates a search `limit` value (must be a positive number).
+ *
+ * There is deliberately no upper bound here: the engine clamps `limit` to its
+ * configured maximum (`SEARCHCRAFT_MAX_RESULT_LIMIT`, 200 by default) rather
+ * than rejecting the request, and operators can raise that ceiling. Rejecting
+ * client-side would break valid requests against a reconfigured instance.
  * @param limit - The limit value to validate.
  * @returns The validated limit.
- * @throws {ValidationError} When `limit` is not a positive number or exceeds 200.
+ * @throws {ValidationError} When `limit` is not a positive number.
  */
 export const validateLimit = (limit: number): number => {
   validatePositiveNumber(limit, 'limit');
-  if (limit > 200) {
-    throw new ValidationError('limit cannot exceed 200', 'limit');
-  }
   return limit;
 };
 

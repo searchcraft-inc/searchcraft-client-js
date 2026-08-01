@@ -5,7 +5,10 @@
 
 // Export API classes for direct use or extension
 export { AuthApi } from './api/auth.js';
+export { DocumentApi } from './api/documents.js';
 export { FederationApi } from './api/federations.js';
+export type { HealthCheckData } from './api/health.js';
+export { HealthApi } from './api/health.js';
 export { IndexApi } from './api/indices.js';
 export { MeasureApi } from './api/measure.js';
 export { SearchApi } from './api/search.js';
@@ -44,8 +47,10 @@ export type {
   FederationIndexConfig,
   FederationName,
   FederationOperationResponse,
+  FederationRequest,
   FederationStats,
   FieldConfig,
+  FieldSelector,
   // Index configuration types
   FieldType,
   HttpStreamResponse,
@@ -55,18 +60,24 @@ export type {
   IndexName,
   IndexOperationResponse,
   IndexStats,
+  IngestionConfig,
   KeywordRule,
   KnownMeasureEventName,
   LLMProvider,
   // Measure types
+  MeasureDashboardParams,
+  MeasureDashboardReport,
   MeasureDashboardSummary,
   MeasureEventName,
   MeasureOperationResponse,
+  MeasureQueryGranularity,
   MeasureRequest,
   MeasureRequestProperties,
   MeasureRequestUser,
   MeasureStatus,
   MeasureUserType,
+  // Search types
+  MoreLikeThisQuery,
   OccurMode,
   PromptInstruction,
   QueryMode,
@@ -74,7 +85,6 @@ export type {
   SearchcraftConfig,
   SearchHit,
   SearchOptions,
-  // Search types
   SearchQuery,
   SearchRequest,
   SearchResponse,
@@ -89,6 +99,7 @@ export type {
   SummaryStreamEvent,
   SynonymOperationResponse,
   SynonymsMap,
+  TermQuery,
   UpdateAuthKeyRequest,
 } from './types/index.js';
 // Export branded type creators
@@ -101,8 +112,11 @@ export {
   createDocumentId,
   createFederationName,
   createIndexName,
+  hasPermissions,
   NetworkError,
   NotFoundError,
+  permissionPresets,
+  permissions,
   SearchcraftError,
   ValidationError,
 } from './types/index.js';

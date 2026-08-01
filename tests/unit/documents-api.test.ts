@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DocumentApi } from '../../src/api/documents';
 import type { HttpClient } from '../../src/core/http';
+import type { DocumentWithId } from '../../src/types/index';
 import { createApiKey, createIndexName, ValidationError } from '../../src/types/index';
 
 describe('DocumentApi', () => {
@@ -13,13 +14,16 @@ describe('DocumentApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   describe('insert', () => {
     it('should insert a document', async () => {
+      const mockPayload = 'changes accepted. make sure to commit or rollback.';
       const mockResponse = {
         status: 200,
-        data: 'changes accepted. make sure to commit or rollback.',
+        headers: {},
+        data: { status: 200, data: mockPayload },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -30,7 +34,7 @@ describe('DocumentApi', () => {
 
       const result = await api.insert(indexName, document);
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockPayload);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'POST',
@@ -53,12 +57,14 @@ describe('DocumentApi', () => {
 
   describe('delete', () => {
     it('should delete a document by query', async () => {
+      const mockPayload = {
+        detail: 'deletion request accepted. make sure to commit or rollback.',
+        num_removed: 1,
+      };
       const mockResponse = {
         status: 200,
-        data: {
-          detail: 'deletion request accepted. make sure to commit or rollback.',
-          num_removed: 1,
-        },
+        headers: {},
+        data: { status: 200, data: mockPayload },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -68,7 +74,7 @@ describe('DocumentApi', () => {
 
       const result = await api.delete(indexName, '123');
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockPayload);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'DELETE',
@@ -95,9 +101,11 @@ describe('DocumentApi', () => {
 
   describe('batchInsert', () => {
     it('should batch insert documents', async () => {
+      const mockPayload = 'changes accepted. make sure to commit or rollback.';
       const mockResponse = {
         status: 200,
-        data: 'changes accepted. make sure to commit or rollback.',
+        headers: {},
+        data: { status: 200, data: mockPayload },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -111,7 +119,7 @@ describe('DocumentApi', () => {
 
       const result = await api.batchInsert(indexName, documents);
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockPayload);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'POST',
@@ -144,12 +152,14 @@ describe('DocumentApi', () => {
 
   describe('batchDelete', () => {
     it('should batch delete documents by field term match', async () => {
+      const mockPayload = {
+        detail: 'deletion request accepted. make sure to commit or rollback.',
+        num_removed: 2,
+      };
       const mockResponse = {
         status: 200,
-        data: {
-          detail: 'deletion request accepted. make sure to commit or rollback.',
-          num_removed: 2,
-        },
+        headers: {},
+        data: { status: 200, data: mockPayload },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -160,7 +170,7 @@ describe('DocumentApi', () => {
 
       const result = await api.batchDelete(indexName, documentIds);
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockPayload);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'DELETE',
@@ -181,9 +191,11 @@ describe('DocumentApi', () => {
 
   describe('deleteAll', () => {
     it('should delete all documents from an index', async () => {
+      const mockPayload = 'deletion request accepted. make sure to commit or rollback.';
       const mockResponse = {
         status: 200,
-        data: 'deletion request accepted. make sure to commit or rollback.',
+        headers: {},
+        data: { status: 200, data: mockPayload },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -193,7 +205,7 @@ describe('DocumentApi', () => {
 
       const result = await api.deleteAll(indexName);
 
-      expect(result).toEqual(mockResponse.data);
+      expect(result).toEqual(mockPayload);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'DELETE',
@@ -212,9 +224,11 @@ describe('DocumentApi', () => {
         score: 1.0,
         source_index: 'test-index',
       };
+      const mockPayload = mockHit;
       const mockResponse = {
         status: 200,
-        data: mockHit,
+        headers: {},
+        data: { status: 200, data: mockPayload },
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce(mockResponse);
@@ -233,6 +247,28 @@ describe('DocumentApi', () => {
           path: 'http://localhost:8000/index/test-index/documents/internal-id',
         }),
         'test-read-key'
+      );
+    });
+  });
+
+  describe('deleteByInternalId', () => {
+    it('should delete a document by its internal Searchcraft id', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'deleted' },
+        headers: {},
+      });
+
+      const api = new DocumentApi(mockConfig, mockHttpClient);
+      const result = await api.deleteByInternalId(createIndexName('test-index'), '12345');
+
+      expect(result).toBe('deleted');
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'DELETE',
+          path: 'http://localhost:8000/index/test-index/documents/12345',
+        }),
+        'test-ingest-key'
       );
     });
   });

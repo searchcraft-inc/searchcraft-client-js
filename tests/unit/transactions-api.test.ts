@@ -13,13 +13,14 @@ describe('TransactionApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   describe('commit', () => {
     it('should commit a transaction for the given index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'transaction committed',
+        data: { status: 200, data: 'transaction committed' },
         headers: {},
       });
 
@@ -40,7 +41,7 @@ describe('TransactionApi', () => {
     it('should use the ingest key for commit', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'ok',
+        data: { status: 200, data: 'ok' },
         headers: {},
       });
 
@@ -55,7 +56,7 @@ describe('TransactionApi', () => {
     it('should roll back a transaction for the given index', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'transaction rolled back',
+        data: { status: 200, data: 'transaction rolled back' },
         headers: {},
       });
 
@@ -76,7 +77,7 @@ describe('TransactionApi', () => {
     it('should use the ingest key for rollback', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'ok',
+        data: { status: 200, data: 'ok' },
         headers: {},
       });
 

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import type { HttpClient } from '../../src/core/http';
 import { createApiKey, createClient } from '../../src/index';
+import type { SearchcraftConfig } from '../../src/types/index';
+
+/** Shape of the private fields these tests assert are wired up. */
+interface ClientInternals {
+  readonly config: SearchcraftConfig;
+  readonly httpClient: HttpClient;
+}
 
 describe('SearchcraftClient', () => {
   it('should create a client with valid configuration', () => {
@@ -57,8 +65,10 @@ describe('SearchcraftClient', () => {
       readKey: createApiKey('test-read-key'),
     });
 
-    expect(client.config).toBeDefined();
-    expect(client.config.endpointUrl).toBe('http://localhost:8000');
+    // `config` is private; reach past the access modifier to assert internal wiring.
+    const internals = client as unknown as ClientInternals;
+    expect(internals.config).toBeDefined();
+    expect(internals.config.endpointUrl).toBe('http://localhost:8000');
   });
 
   it('should expose httpClient getter', () => {
@@ -67,7 +77,8 @@ describe('SearchcraftClient', () => {
       readKey: createApiKey('test-read-key'),
     });
 
-    expect(client.httpClient).toBeDefined();
+    const internals = client as unknown as ClientInternals;
+    expect(internals.httpClient).toBeDefined();
   });
 
   it('should return frozen config via getConfig()', () => {

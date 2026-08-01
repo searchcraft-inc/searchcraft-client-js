@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthApi } from '../../src/api/auth';
 import type { HttpClient } from '../../src/core/http';
 import type { AuthKey, CreateAuthKeyRequest, UpdateAuthKeyRequest } from '../../src/types/index';
-import { createApiKey, createFederationName, createIndexName } from '../../src/types/index';
+import {
+  AuthenticationError,
+  createApiKey,
+  createFederationName,
+  createIndexName,
+  permissions,
+} from '../../src/types/index';
 
 describe('AuthApi', () => {
   const mockConfig = {
@@ -15,10 +21,11 @@ describe('AuthApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   const sampleAuthKey: AuthKey = {
-    key: 'abc123',
+    token: 'abc123',
     name: 'Test Key',
     permissions: 1,
     allowed_indexes: ['products'],
@@ -29,7 +36,7 @@ describe('AuthApi', () => {
     it('should list all keys using GET /auth/key with admin key', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [sampleAuthKey],
+        data: { status: 200, data: [sampleAuthKey] },
         headers: {},
       });
 
@@ -46,9 +53,10 @@ describe('AuthApi', () => {
 
   describe('getKey', () => {
     it('should get a key by value using GET /auth/key/:key with admin key', async () => {
+      // The engine answers this route with a list, not a single object.
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: sampleAuthKey,
+        data: { status: 200, data: [sampleAuthKey] },
         headers: {},
       });
 
@@ -60,6 +68,46 @@ describe('AuthApi', () => {
         expect.objectContaining({ method: 'GET', path: 'http://localhost:8000/auth/key/abc123' }),
         'test-admin-key'
       );
+    });
+
+    it('should return null when no such key exists', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: [] },
+        headers: {},
+      });
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      expect(await api.getKey('missing')).toBeNull();
+    });
+  });
+
+  describe('checkKeyPermissions', () => {
+    it('should return true when the key carries the requested bits', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'Key has sufficient permissions.' },
+        headers: {},
+      });
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      expect(await api.checkKeyPermissions(permissions.SEARCH)).toBe(true);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/auth/key/check/1',
+        }),
+        'test-admin-key'
+      );
+    });
+
+    it('should map a 403 to false rather than throwing', async () => {
+      vi.mocked(mockHttpClient.request).mockRejectedValueOnce(
+        new AuthenticationError('Key has insufficient permissions.')
+      );
+
+      const api = new AuthApi(mockConfig, mockHttpClient);
+      expect(await api.checkKeyPermissions(permissions.READ_ANALYTICS)).toBe(false);
     });
   });
 
@@ -73,7 +121,7 @@ describe('AuthApi', () => {
       };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: sampleAuthKey,
+        data: { status: 200, data: sampleAuthKey },
         headers: {},
       });
 
@@ -97,7 +145,7 @@ describe('AuthApi', () => {
       const request: UpdateAuthKeyRequest = { status: 'inactive' };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: { ...sampleAuthKey, status: 'inactive' },
+        data: { status: 200, data: { ...sampleAuthKey, status: 'inactive' } },
         headers: {},
       });
 
@@ -119,7 +167,7 @@ describe('AuthApi', () => {
     it('should delete a key using DELETE /auth/key/:key with admin key', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'key deleted',
+        data: { status: 200, data: 'key deleted' },
         headers: {},
       });
 
@@ -141,7 +189,7 @@ describe('AuthApi', () => {
     it('should delete all keys using DELETE /auth/key with admin key', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'all keys deleted',
+        data: { status: 200, data: 'all keys deleted' },
         headers: {},
       });
 
@@ -160,12 +208,12 @@ describe('AuthApi', () => {
     it('should list application keys using GET /auth/application/:id with admin key', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [sampleAuthKey],
+        data: { status: 200, data: [sampleAuthKey] },
         headers: {},
       });
 
       const api = new AuthApi(mockConfig, mockHttpClient);
-      const result = await api.listApplicationKeys(42);
+      const result = await api.listApplicationKeys('42');
 
       expect(result).toEqual([sampleAuthKey]);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
@@ -182,12 +230,12 @@ describe('AuthApi', () => {
     it('should list organization keys using GET /auth/organization/:id with admin key', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [sampleAuthKey],
+        data: { status: 200, data: [sampleAuthKey] },
         headers: {},
       });
 
       const api = new AuthApi(mockConfig, mockHttpClient);
-      const result = await api.listOrganizationKeys(7);
+      const result = await api.listOrganizationKeys('7');
 
       expect(result).toEqual([sampleAuthKey]);
       expect(mockHttpClient.request).toHaveBeenCalledWith(
@@ -204,7 +252,7 @@ describe('AuthApi', () => {
     it('should list federation keys using GET /auth/federation/:name with admin key', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [sampleAuthKey],
+        data: { status: 200, data: [sampleAuthKey] },
         headers: {},
       });
 
@@ -226,7 +274,7 @@ describe('AuthApi', () => {
     it('should list index keys using GET /auth/index/:index_name with admin key', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [sampleAuthKey],
+        data: { status: 200, data: [sampleAuthKey] },
         headers: {},
       });
 
@@ -246,7 +294,7 @@ describe('AuthApi', () => {
     it('should percent-encode the index name in the path', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [sampleAuthKey],
+        data: { status: 200, data: [sampleAuthKey] },
         headers: {},
       });
 

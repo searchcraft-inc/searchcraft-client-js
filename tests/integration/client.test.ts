@@ -170,10 +170,10 @@ describe.skipIf(!shouldRunIntegrationTests)('Integration Tests', () => {
       };
 
       // Step 1: Insert the document
+      // `insert` resolves to the API's acknowledgement message (a plain string).
       const createResponse = await client.documents.insert(indexName, testDocument);
       expect(createResponse).toBeDefined();
-      expect(createResponse.status).toBeDefined();
-      expect(createResponse.data.success).toBe(true);
+      expect(typeof createResponse).toBe('string');
 
       // Wait a bit for the document to be indexed
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -188,21 +188,24 @@ describe.skipIf(!shouldRunIntegrationTests)('Integration Tests', () => {
       expect(searchResponse.data.hits.length).toBeGreaterThan(0);
 
       const foundHit = searchResponse.data.hits[0];
+      if (!foundHit) {
+        throw new Error(`No search hit returned for ${testDocId}`);
+      }
       expect(foundHit.doc).toBeDefined();
       expect(foundHit.doc.id).toBe(testDocId);
       expect(foundHit.document_id).toBeDefined();
 
       // Step 3: Get the document by its internal document_id
-      const getResponse = await client.documents.get(indexName, foundHit.document_id);
+      const getResponse = await client.documents.get<TestDocument>(indexName, foundHit.document_id);
       expect(getResponse).toBeDefined();
-      expect(getResponse.id).toBe(testDocId);
-      expect((getResponse as TestDocument).title).toBe(testDocument.title);
+      expect(getResponse.doc.id).toBe(testDocId);
+      expect(getResponse.doc.title).toBe(testDocument.title);
 
       // Step 4: Delete the document
       const deleteResponse = await client.documents.delete(indexName, testDocId);
       expect(deleteResponse).toBeDefined();
-      expect(deleteResponse.status).toBeDefined();
-      expect(deleteResponse.data.success).toBe(true);
+      expect(deleteResponse.detail).toBeDefined();
+      expect(deleteResponse.num_removed).toBeGreaterThan(0);
 
       // Wait a bit for the deletion to be processed
       await new Promise((resolve) => setTimeout(resolve, 1000));

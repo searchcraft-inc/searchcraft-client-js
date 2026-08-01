@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { ExactQuery } from '../../src/types/index';
 import {
   createDynamicQuery,
   createExactQuery,
@@ -87,7 +88,7 @@ describe('QueryBuilder', () => {
     it('should handle date ranges', () => {
       const from = new Date('2024-01-01T00:00:00Z');
       const to = new Date('2024-12-31T23:59:59Z');
-      const query = exact().range('created_at', from, to).build();
+      const query = exact().range('created_at', from, to).build() as ExactQuery;
       expect(query.exact.ctx).toContain('created_at:[2024-01-01');
       expect(query.exact.ctx).toContain('TO');
       expect(query.exact.ctx).toContain('2024-12-31');
@@ -107,7 +108,7 @@ describe('QueryBuilder', () => {
 
     it('should handle date comparisons', () => {
       const date = new Date('2024-01-01T00:00:00Z');
-      const query = exact().compare('created_at', '>=', date).build();
+      const query = exact().compare('created_at', '>=', date).build() as ExactQuery;
       expect(query.exact.ctx).toContain('created_at:>=2024-01-01');
     });
   });

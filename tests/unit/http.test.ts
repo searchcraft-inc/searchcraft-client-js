@@ -299,6 +299,25 @@ describe('HttpClient', () => {
       expect(error.message).toBe('Unknown error occurred');
     });
 
+    it('should extract the error message from the engine envelope', async () => {
+      // The engine reports failures through the same { status, data } envelope
+      // it uses for successes, with the message as the `data` string.
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        headers: new Headers(),
+        json: async () => ({ status: 400, data: 'index does not exist' }),
+      });
+
+      const client = createHttpClient();
+      await expect(
+        client.request(
+          { method: 'GET', path: 'http://localhost:8000/index/nope' },
+          createApiKey('test-key')
+        )
+      ).rejects.toThrow('index does not exist');
+    });
+
     it('should extract error message from response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,

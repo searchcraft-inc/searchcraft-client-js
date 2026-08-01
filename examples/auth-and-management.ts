@@ -5,7 +5,13 @@
  * Auth management requires an adminKey in the client config.
  */
 
-import { createApiKey, createClient, createFederationName, createIndexName } from '../src/index';
+import {
+  createApiKey,
+  createClient,
+  createFederationName,
+  createIndexName,
+  permissionPresets,
+} from '../src/index';
 
 // Self-hosted instance with all key types configured
 const client = createClient({
@@ -36,7 +42,7 @@ async function rollbackTransaction() {
 // Example 3: Wrap document writes in a try/commit/rollback pattern
 async function safeIngest() {
   try {
-    await client.documents.upsert(indexName, [{ id: '1', name: 'Widget' }]);
+    await client.documents.batchInsert(indexName, [{ id: '1', name: 'Widget' }]);
     await client.transactions.commit(indexName);
     console.log('Ingest committed successfully');
   } catch (error) {
@@ -125,11 +131,11 @@ async function listAuthKeys() {
 async function createReadKey() {
   const newKey = await client.auth.createKey({
     name: 'Storefront Read Key',
-    permissions: 1,
+    permissions: permissionPresets.READ,
     allowed_indexes: [String(indexName)],
     status: 'active',
   });
-  console.log('Created key:', newKey.key);
+  console.log('Created key:', newKey.token);
 }
 
 // Example 10: Disable a key

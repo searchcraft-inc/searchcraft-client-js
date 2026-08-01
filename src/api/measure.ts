@@ -8,7 +8,11 @@
 
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
+import { unwrapData } from '../core/http.js';
 import type {
+  ApiResponse,
+  MeasureDashboardParams,
+  MeasureDashboardReport,
   MeasureDashboardSummary,
   MeasureOperationResponse,
   MeasureRequest,
@@ -19,6 +23,29 @@ import type {
 /**
  * Measure API class
  */
+/**
+ * Serializes dashboard filters into a query string.
+ * `index_names` is pipe-delimited, which is what the engine parses.
+ * @param params - The filters to apply, if any.
+ * @returns A query string beginning with `?`, or an empty string when no filters are set.
+ */
+const buildDashboardQuery = (params: MeasureDashboardParams = {}): string => {
+  const search = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue;
+    if (key === 'index_names') {
+      const names = value as ReadonlyArray<string>;
+      if (names.length > 0) search.set(key, names.join('|'));
+      continue;
+    }
+    search.set(key, String(value));
+  }
+
+  const query = search.toString();
+  return query ? `?${query}` : '';
+};
+
 export class MeasureApi {
   constructor(
     private readonly config: Readonly<SearchcraftConfig>,
@@ -40,12 +67,12 @@ export class MeasureApi {
     const apiKey = getApiKey(this.config, 'read');
     const path = `${this.config.endpointUrl}/measure/status`;
 
-    const response = await this.httpClient.request<MeasureStatus>(
+    const response = await this.httpClient.request<ApiResponse<MeasureStatus>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -57,16 +84,16 @@ export class MeasureApi {
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
    */
-  async getDashboardSummary(): Promise<MeasureDashboardSummary> {
+  async getDashboardSummary(params: MeasureDashboardParams = {}): Promise<MeasureDashboardSummary> {
     const apiKey = getApiKey(this.config, 'read');
-    const path = `${this.config.endpointUrl}/measure/dashboard/summary`;
+    const path = `${this.config.endpointUrl}/measure/dashboard/summary${buildDashboardQuery(params)}`;
 
-    const response = await this.httpClient.request<MeasureDashboardSummary>(
+    const response = await this.httpClient.request<ApiResponse<MeasureDashboardSummary>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -83,12 +110,12 @@ export class MeasureApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/measure/event`;
 
-    const response = await this.httpClient.request<MeasureOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<MeasureOperationResponse>>(
       { method: 'POST', path, body: event, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -105,11 +132,58 @@ export class MeasureApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/measure/batch`;
 
-    const response = await this.httpClient.request<MeasureOperationResponse>(
-      { method: 'POST', path, body: events, timeout: this.config.timeout },
+    const response = await this.httpClient.request<ApiResponse<MeasureOperationResponse>>(
+      // The batch endpoint expects `{ "items": [...] }`, not a bare array.
+      { method: 'POST', path, body: { items: events }, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
+  }
+
+  /**
+   * Returns the measure dashboard conversion report.
+   * Uses GET /measure/dashboard/conversion
+   * The shape of this payload is not stable across engine versions.
+   * @returns A promise resolving to the conversion report.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key lacks the analytics permission.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async getDashboardConversion(
+    params: MeasureDashboardParams = {}
+  ): Promise<MeasureDashboardReport> {
+    const apiKey = getApiKey(this.config, 'read');
+    const path = `${this.config.endpointUrl}/measure/dashboard/conversion${buildDashboardQuery(params)}`;
+
+    const response = await this.httpClient.request<ApiResponse<MeasureDashboardReport>>(
+      { method: 'GET', path, timeout: this.config.timeout },
+      apiKey
+    );
+
+    return unwrapData(response);
+  }
+
+  /**
+   * Returns the measure dashboard usage report.
+   * Uses GET /measure/dashboard/usage
+   * The shape of this payload is not stable across engine versions.
+   * @returns A promise resolving to the usage report.
+   * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
+   * @throws {AuthenticationError} When the API key lacks the analytics permission.
+   * @throws {ApiError} When the server returns a non-2xx response.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async getDashboardUsage(params: MeasureDashboardParams = {}): Promise<MeasureDashboardReport> {
+    const apiKey = getApiKey(this.config, 'read');
+    const path = `${this.config.endpointUrl}/measure/dashboard/usage${buildDashboardQuery(params)}`;
+
+    const response = await this.httpClient.request<ApiResponse<MeasureDashboardReport>>(
+      { method: 'GET', path, timeout: this.config.timeout },
+      apiKey
+    );
+
+    return unwrapData(response);
   }
 }

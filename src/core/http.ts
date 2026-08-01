@@ -4,6 +4,7 @@
 
 import type {
   ApiKey,
+  ApiResponse,
   HttpRequestOptions,
   HttpResponse,
   HttpStreamResponse,
@@ -69,6 +70,32 @@ const createHeaders = (
 };
 
 /**
+ * Extracts the human-readable message from an error body.
+ *
+ * The engine reports failures through the same `{ status, data }` envelope it
+ * uses for successes, with the message as the `data` string. A `message` field
+ * is also accepted for proxies and older deployments.
+ * @param body - The parsed response body.
+ * @returns The error message, falling back to a generic string.
+ */
+const extractErrorMessage = (body: unknown): string => {
+  if (typeof body === 'string' && body !== '') return body;
+  if (typeof body === 'object' && body !== null) {
+    const record = body as Record<string, unknown>;
+    if (typeof record.data === 'string' && record.data !== '') return record.data;
+    if (typeof record.message === 'string' && record.message !== '') return record.message;
+  }
+  return 'Request failed';
+};
+
+/**
+ * Unwraps the `{ status, data }` envelope every Searchcraft endpoint returns.
+ * @param response - The HTTP response whose body is an enveloped payload.
+ * @returns The endpoint payload.
+ */
+export const unwrapData = <T>(response: HttpResponse<ApiResponse<T>>): T => response.data.data;
+
+/**
  * Handles HTTP errors and throws the appropriate typed error.
  * @param status - The HTTP response status code.
  * @param data - The parsed response body, used to extract the error message.
@@ -77,10 +104,7 @@ const createHeaders = (
  * @throws {ApiError} For all other non-2xx status codes.
  */
 const handleHttpError = (status: number, data: unknown): never => {
-  const errorMessage =
-    typeof data === 'object' && data !== null && 'message' in data
-      ? String(data.message)
-      : 'Request failed';
+  const errorMessage = extractErrorMessage(data);
 
   switch (status) {
     case 401:
