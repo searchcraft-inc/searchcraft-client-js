@@ -7,13 +7,15 @@
 
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
+import { unwrapData } from '../core/http.js';
 import type {
   AuthKey,
   AuthKeyListResponse,
   CreateAuthKeyRequest,
   UpdateAuthKeyRequest,
 } from '../types/auth.js';
-import type { FederationName, IndexName, SearchcraftConfig } from '../types/index.js';
+import type { ApiResponse, FederationName, IndexName, SearchcraftConfig } from '../types/index.js';
+import { AuthenticationError } from '../types/index.js';
 
 /**
  * Authentication management API class (self-hosted only)
@@ -36,11 +38,11 @@ export class AuthApi {
   async listKeys(): Promise<AuthKeyListResponse> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/key`;
-    const response = await this.httpClient.request<AuthKeyListResponse>(
+    const response = await this.httpClient.request<ApiResponse<AuthKeyListResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -54,14 +56,40 @@ export class AuthApi {
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
    */
-  async getKey(key: string): Promise<AuthKey> {
+  async getKey(key: string): Promise<AuthKey | null> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/key/${key}`;
-    const response = await this.httpClient.request<AuthKey>(
+    const response = await this.httpClient.request<ApiResponse<AuthKeyListResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    // The engine answers this route with a list, empty when no such key exists.
+    return unwrapData(response)[0] ?? null;
+  }
+
+  /**
+   * Checks whether the configured admin key carries all of the given permission bits.
+   * Uses GET /auth/key/check/:permission
+   * @param permissionFlags - A bitmask built from the `permissions` constants.
+   * @returns A promise resolving to true when the key carries every requested bit.
+   * @throws {ConfigurationError} When `adminKey` is not set in the client configuration.
+   * @throws {ApiError} When the server returns a non-2xx response other than 403.
+   * @throws {NetworkError} When the request times out or a network failure occurs.
+   */
+  async checkKeyPermissions(permissionFlags: number): Promise<boolean> {
+    const apiKey = getApiKey(this.config, 'admin');
+    const path = `${this.config.endpointUrl}/auth/key/check/${permissionFlags}`;
+    try {
+      await this.httpClient.request<ApiResponse<string>>(
+        { method: 'GET', path, timeout: this.config.timeout },
+        apiKey
+      );
+      return true;
+    } catch (error) {
+      // A key that simply lacks the permission is a 403, not a failure.
+      if (error instanceof AuthenticationError) return false;
+      throw error;
+    }
   }
 
   /**
@@ -77,11 +105,11 @@ export class AuthApi {
   async createKey(request: CreateAuthKeyRequest): Promise<AuthKey> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/key`;
-    const response = await this.httpClient.request<AuthKey>(
+    const response = await this.httpClient.request<ApiResponse<AuthKey>>(
       { method: 'POST', path, body: request, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -99,11 +127,11 @@ export class AuthApi {
   async updateKey(key: string, request: UpdateAuthKeyRequest): Promise<AuthKey> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/key/${key}`;
-    const response = await this.httpClient.request<AuthKey>(
+    const response = await this.httpClient.request<ApiResponse<AuthKey>>(
       { method: 'POST', path, body: request, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -120,11 +148,11 @@ export class AuthApi {
   async deleteKey(key: string): Promise<string> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/key/${key}`;
-    const response = await this.httpClient.request<string>(
+    const response = await this.httpClient.request<ApiResponse<string>>(
       { method: 'DELETE', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -139,11 +167,11 @@ export class AuthApi {
   async deleteAllKeys(): Promise<string> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/key`;
-    const response = await this.httpClient.request<string>(
+    const response = await this.httpClient.request<ApiResponse<string>>(
       { method: 'DELETE', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -157,14 +185,14 @@ export class AuthApi {
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
    */
-  async listApplicationKeys(applicationId: number): Promise<AuthKeyListResponse> {
+  async listApplicationKeys(applicationId: string): Promise<AuthKeyListResponse> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/application/${applicationId}`;
-    const response = await this.httpClient.request<AuthKeyListResponse>(
+    const response = await this.httpClient.request<ApiResponse<AuthKeyListResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -178,14 +206,14 @@ export class AuthApi {
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
    */
-  async listOrganizationKeys(organizationId: number): Promise<AuthKeyListResponse> {
+  async listOrganizationKeys(organizationId: string): Promise<AuthKeyListResponse> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/organization/${organizationId}`;
-    const response = await this.httpClient.request<AuthKeyListResponse>(
+    const response = await this.httpClient.request<ApiResponse<AuthKeyListResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -202,11 +230,11 @@ export class AuthApi {
   async listFederationKeys(federationName: FederationName): Promise<AuthKeyListResponse> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/federation/${federationName}`;
-    const response = await this.httpClient.request<AuthKeyListResponse>(
+    const response = await this.httpClient.request<ApiResponse<AuthKeyListResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -224,10 +252,10 @@ export class AuthApi {
   async listIndexKeys(indexName: IndexName): Promise<AuthKeyListResponse> {
     const apiKey = getApiKey(this.config, 'admin');
     const path = `${this.config.endpointUrl}/auth/index/${encodeURIComponent(indexName)}`;
-    const response = await this.httpClient.request<AuthKeyListResponse>(
+    const response = await this.httpClient.request<ApiResponse<AuthKeyListResponse>>(
       { method: 'GET', path, timeout: this.config.timeout },
       apiKey
     );
-    return response.data;
+    return unwrapData(response);
   }
 }

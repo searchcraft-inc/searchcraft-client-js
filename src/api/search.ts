@@ -61,7 +61,7 @@ export class SearchApi {
    * @param indexName - The name of the index to search.
    * @param request - The search request parameters including query, filters, limit, and offset.
    * @returns A promise resolving to the search response containing hits and metadata.
-   * @throws {ValidationError} When `limit` exceeds 200 or `offset` is negative.
+   * @throws {ValidationError} When `limit` is not positive or `offset` is negative.
    * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
    * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
    * @throws {NotFoundError} When the specified index does not exist.
@@ -110,7 +110,7 @@ export class SearchApi {
    * @param indexName - The name of the index to summarise search results for.
    * @param request - The search request used to retrieve candidate documents.
    * @returns An async iterable of {@link SummaryStreamEvent}s.
-   * @throws {ValidationError} When `limit` exceeds 200 or `offset` is negative.
+   * @throws {ValidationError} When `limit` is not positive or `offset` is negative.
    * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
    * @throws {AuthenticationError} When the API key is invalid or lacks summary permissions.
    * @throws {NotFoundError} When the specified index does not exist.
@@ -186,7 +186,7 @@ export class SearchApi {
    * @param federationName - The name of the federation to search.
    * @param request - The search request parameters including query, filters, limit, and offset.
    * @returns A promise resolving to the search response containing hits and metadata.
-   * @throws {ValidationError} When `limit` exceeds 200 or `offset` is negative.
+   * @throws {ValidationError} When `limit` is not positive or `offset` is negative.
    * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
    * @throws {AuthenticationError} When the API key is invalid or lacks read permissions.
    * @throws {NotFoundError} When the specified federation does not exist.

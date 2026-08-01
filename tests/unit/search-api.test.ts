@@ -37,6 +37,7 @@ describe('SearchApi', () => {
 
       const mockResponse = {
         status: 200,
+        headers: {},
         data: mockData,
       };
 
@@ -173,6 +174,7 @@ describe('SearchApi', () => {
 
       const mockResponse = {
         status: 200,
+        headers: {},
         data: mockData,
       };
 

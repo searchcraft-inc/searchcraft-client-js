@@ -7,16 +7,7 @@ import type { AIConfig } from './ai.js';
 /**
  * Supported field types in Searchcraft indices
  */
-export type FieldType =
-  | 'text'
-  | 'facet'
-  | 'bool'
-  | 'f64'
-  | 'u64'
-  | 'i64'
-  | 'datetime'
-  | 'bytes'
-  | 'json';
+export type FieldType = 'text' | 'facet' | 'bool' | 'f64' | 'u64' | 'i64' | 'datetime' | 'json';
 
 /**
  * Configuration for a single field in an index
@@ -28,6 +19,12 @@ export interface FieldConfig {
   readonly fast?: boolean;
   readonly multi?: boolean;
   readonly required?: boolean;
+  /**
+   * Whether field norms are recorded, which the engine needs for length
+   * normalization during scoring. Applies to numeric, boolean and datetime
+   * fields; defaults to whatever `indexed` is.
+   */
+  readonly fieldnorms?: boolean;
   /** For datetime fields: "seconds", "milliseconds", "microseconds", "nanoseconds" */
   readonly precision?: string;
   /**
@@ -44,6 +41,17 @@ export interface FieldConfig {
 }
 
 /**
+ * Document ingestion processing options for an index.
+ */
+export interface IngestionConfig {
+  /**
+   * Enrichment pipeline applied to documents before they are indexed.
+   * Omit to perform no enrichment.
+   */
+  readonly enrichment_pipeline?: string;
+}
+
+/**
  * Full index configuration as returned by GET /index/:index
  */
 export interface IndexConfig {
@@ -55,6 +63,8 @@ export interface IndexConfig {
   readonly search_fields?: string[];
   readonly time_decay_field?: string;
   readonly weight_multipliers?: Record<string, number>;
+  /** Document ingestion processing options. */
+  readonly ingestion?: IngestionConfig;
   /**
    * Whether AI-powered features are enabled for this index.
    * Added in engine 0.10.0. Requires an admin-level key to change.

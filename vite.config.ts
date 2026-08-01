@@ -7,12 +7,12 @@ export default defineConfig({
     dts({
       include: ['src/**/*'],
       exclude: ['src/**/*.test.ts', 'tests/**/*'],
-      rollupTypes: true,
+      bundleTypes: true,
     }),
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
       name: 'SearchcraftClient',
       formats: ['es', 'cjs', 'umd'],
       fileName: (format) => {
@@ -39,7 +39,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(import.meta.dirname, 'src'),
     },
   },
 });

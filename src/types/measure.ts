@@ -94,9 +94,51 @@ export interface MeasureStatus {
 }
 
 /**
+ * Time bucket size for dashboard reports.
+ */
+export type MeasureQueryGranularity = 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years';
+
+/**
+ * Filters accepted by the `/measure/dashboard/*` reports.
+ *
+ * Every field is optional. Scope fields the calling key already carries
+ * (`organization_id`, `application_id`) are injected server-side when omitted,
+ * and supplying one that conflicts with the key is rejected. Super-user keys
+ * may omit `organization_id` to read across tenants.
+ */
+export interface MeasureDashboardParams {
+  /** Organization to report on. Must match the calling key unless it is a super user. */
+  readonly organization_id?: string;
+  /** Application to report on. Must be accessible to the calling key. */
+  readonly application_id?: string;
+  /** Restrict the report to these indexes. Sent pipe-delimited. */
+  readonly index_names?: ReadonlyArray<string>;
+  readonly user_id?: string;
+  readonly user_type?: MeasureUserType;
+  readonly session_id?: string;
+  readonly event_name?: MeasureEventName;
+  /** Start of the reporting window, as a Unix timestamp in seconds. */
+  readonly date_start?: number;
+  /** End of the reporting window, as a Unix timestamp in seconds. */
+  readonly date_end?: number;
+  /** Time bucket size for series data. */
+  readonly granularity?: MeasureQueryGranularity;
+  /** Results per page. */
+  readonly rpp?: number;
+  /** Zero-based page number. */
+  readonly page?: number;
+}
+
+/**
  * Response from GET /measure/dashboard/summary
  */
 export type MeasureDashboardSummary = Record<string, unknown>;
+
+/**
+ * Response from the GET /measure/dashboard/* reports.
+ * The shape is not stable across engine versions.
+ */
+export type MeasureDashboardReport = Record<string, unknown>;
 
 /**
  * Response from POST /measure/event and POST /measure/batch

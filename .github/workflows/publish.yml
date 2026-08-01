@@ -38,6 +38,14 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Lint
+        if: steps.check.outputs.skip == 'false'
+        run: npm run lint
+
+      - name: Typecheck
+        if: steps.check.outputs.skip == 'false'
+        run: npm run typecheck
+
       - name: Run tests
         if: steps.check.outputs.skip == 'false'
         run: npm test

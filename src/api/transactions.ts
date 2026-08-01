@@ -7,7 +7,8 @@
 
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
-import type { IndexName, SearchcraftConfig } from '../types/index.js';
+import { unwrapData } from '../core/http.js';
+import type { ApiResponse, IndexName, SearchcraftConfig } from '../types/index.js';
 
 /**
  * Response returned by transaction commit/rollback operations
@@ -38,12 +39,12 @@ export class TransactionApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/commit`;
 
-    const response = await this.httpClient.request<TransactionOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<TransactionOperationResponse>>(
       { method: 'POST', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 
   /**
@@ -61,11 +62,11 @@ export class TransactionApi {
     const apiKey = getApiKey(this.config, 'write');
     const path = `${this.config.endpointUrl}/index/${indexName}/rollback`;
 
-    const response = await this.httpClient.request<TransactionOperationResponse>(
+    const response = await this.httpClient.request<ApiResponse<TransactionOperationResponse>>(
       { method: 'POST', path, timeout: this.config.timeout },
       apiKey
     );
 
-    return response.data;
+    return unwrapData(response);
   }
 }

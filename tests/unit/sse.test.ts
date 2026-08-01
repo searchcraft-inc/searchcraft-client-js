@@ -31,7 +31,7 @@ describe('parseSseStream', () => {
     );
     const events = await drain(parseSseStream(stream));
     expect(events.map((e) => e.event)).toEqual(['metadata', 'delta', 'done']);
-    expect(events[0].data).toBe('{"results_count":2}');
+    expect(events[0]?.data).toBe('{"results_count":2}');
   });
 
   it('coalesces multiple data lines with \\n joins', async () => {

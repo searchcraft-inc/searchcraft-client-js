@@ -14,10 +14,10 @@ A TypeScript client library for the <a href="https://searchcraft.io">Searchcraft
 
 <p align="center">
   <a href="https://www.typescriptlang.org/">
-    <img src="https://img.shields.io/badge/TypeScript-5.9-blue.svg?logo=typescript&style=flat" alt="TypeScript">
+    <img src="https://img.shields.io/badge/TypeScript-6.0-blue.svg?logo=typescript&style=flat" alt="TypeScript">
   </a>
   <a href="https://nodejs.org/en/">
-    <img src="https://img.shields.io/badge/Node.js-18+-339933.svg?logo=node.js&style=flat" alt="Node.js">
+    <img src="https://img.shields.io/badge/Node.js-20.19+-339933.svg?logo=node.js&style=flat" alt="Node.js">
   </a>
   <a href="https://github.com/searchcraft-inc/searchcraft-client-js/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat" alt="License">
@@ -453,22 +453,33 @@ require an `adminKey` in the client config.
 const allKeys = await client.auth.listKeys();
 
 // Scope lookups by owner
-const appKeys = await client.auth.listApplicationKeys(42);
-const orgKeys = await client.auth.listOrganizationKeys(7);
+const appKeys = await client.auth.listApplicationKeys('42');
+const orgKeys = await client.auth.listOrganizationKeys('7');
 const fedKeys = await client.auth.listFederationKeys(createFederationName('my-federation'));
 
 // New in engine 0.10.0: list every key that can access a given index
 const indexKeys = await client.auth.listIndexKeys(createIndexName('products'));
 
-// Create, update, and delete keys
+// Create, update, and delete keys.
+// Permissions are a bitmask, not a fixed set of levels - use the presets or
+// combine individual bits yourself.
+import { hasPermissions, permissionPresets, permissions } from '@searchcraft/client';
+
 const created = await client.auth.createKey({
   name: 'my-read-key',
-  permissions: 1,          // 1 = read, 15 = ingest, 63 = admin
-  allowed_indexes: ['products'],
+  permissions: permissionPresets.READ,
+  allowed_indexes: ['products'],   // omit to grant access to every index
   status: 'active',
 });
-await client.auth.updateKey(created.key, { status: 'inactive' });
-await client.auth.deleteKey(created.key);
+await client.auth.updateKey(created.token, { status: 'inactive' });
+await client.auth.deleteKey(created.token);
+
+// Build an exact mask, and test individual bits
+const analyticsReader = permissions.SEARCH | permissions.READ_ANALYTICS;
+hasPermissions(analyticsReader, permissions.READ_ANALYTICS);  // true
+
+// Ask the server whether the configured admin key carries a permission
+await client.auth.checkKeyPermissions(permissions.READ_ANALYTICS);
 ```
 
 ### Health Check
@@ -537,7 +548,7 @@ console.log('Message:', health.data);    // "Searchcraft is healthy."
 Requires `adminKey` in the client config.
 
 - `listKeys(): Promise<AuthKeyListResponse>` - List every authentication key on the cluster
-- `getKey(key: string): Promise<AuthKey>` - Look up a single key by value
+- `getKey(key: string): Promise<AuthKey | null>` - Look up a single key by value, null when absent
 - `createKey(request: CreateAuthKeyRequest): Promise<AuthKey>` - Create a new key
 - `updateKey(key: string, request: UpdateAuthKeyRequest): Promise<AuthKey>` - Partially update a key
 - `deleteKey(key: string): Promise<string>` - Delete a key

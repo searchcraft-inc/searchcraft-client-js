@@ -38,7 +38,7 @@ export type QueryMode = 'fuzzy' | 'exact' | 'dynamic';
 /**
  * Occur parameter for boolean queries
  */
-export type OccurMode = 'should' | 'must';
+export type OccurMode = 'should' | 'must' | 'mustnot';
 
 /**
  * Sort direction

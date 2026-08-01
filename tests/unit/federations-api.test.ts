@@ -14,6 +14,7 @@ describe('FederationApi', () => {
 
   const mockHttpClient: HttpClient = {
     request: vi.fn(),
+    stream: vi.fn(),
   };
 
   const mockFederation: Federation = {
@@ -35,7 +36,7 @@ describe('FederationApi', () => {
       const mockData = [mockFederation];
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 
@@ -52,7 +53,7 @@ describe('FederationApi', () => {
     it('should return an empty array when there are no federations', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: [],
+        data: { status: 200, data: [] },
         headers: {},
       });
 
@@ -67,7 +68,7 @@ describe('FederationApi', () => {
     it('should get a specific federation', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockFederation,
+        data: { status: 200, data: mockFederation },
         headers: {},
       });
 
@@ -90,7 +91,7 @@ describe('FederationApi', () => {
     it('should delete a federation', async () => {
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: 'federation deleted',
+        data: { status: 200, data: 'federation deleted' },
         headers: {},
       });
 
@@ -122,7 +123,7 @@ describe('FederationApi', () => {
       };
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         status: 200,
-        data: mockData,
+        data: { status: 200, data: mockData },
         headers: {},
       });
 
@@ -135,6 +136,107 @@ describe('FederationApi', () => {
         expect.objectContaining({
           method: 'GET',
           path: 'http://localhost:8000/federation/test_federation/stats',
+        }),
+        'test-read-key'
+      );
+    });
+  });
+
+  describe('create', () => {
+    it('should create a federation via POST /federation', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'federation created' },
+        headers: {},
+      });
+
+      const api = new FederationApi(mockConfig, mockHttpClient);
+      const request = {
+        name: 'global',
+        friendly_name: 'Global',
+        index_configurations: [{ name: 'products', weight_multiplier: 1.0 }],
+      };
+
+      const result = await api.create(request);
+
+      expect(result).toBe('federation created');
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          path: 'http://localhost:8000/federation',
+          body: request,
+        }),
+        'test-ingest-key'
+      );
+    });
+  });
+
+  describe('update', () => {
+    it('should update a federation via PUT /federation/:name', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: 'federation updated' },
+        headers: {},
+      });
+
+      const api = new FederationApi(mockConfig, mockHttpClient);
+      const request = {
+        name: 'global',
+        friendly_name: 'Global',
+        index_configurations: [{ name: 'products', weight_multiplier: 2.0 }],
+      };
+
+      await api.update(createFederationName('global'), request);
+
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'PUT',
+          path: 'http://localhost:8000/federation/global',
+          body: request,
+        }),
+        'test-ingest-key'
+      );
+    });
+  });
+
+  describe('listIndices', () => {
+    it('should list the indexes in a federation', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: ['products', 'articles'] },
+        headers: {},
+      });
+
+      const api = new FederationApi(mockConfig, mockHttpClient);
+      const result = await api.listIndices(createFederationName('global'));
+
+      expect(result).toEqual(['products', 'articles']);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/federation/global/indices',
+        }),
+        'test-read-key'
+      );
+    });
+  });
+
+  describe('listByOrganization', () => {
+    it('should list federations for an organization', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        data: { status: 200, data: [] },
+        headers: {},
+      });
+
+      const api = new FederationApi(mockConfig, mockHttpClient);
+      const result = await api.listByOrganization('org-1');
+
+      expect(result).toEqual([]);
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          path: 'http://localhost:8000/federation/organization/org-1',
         }),
         'test-read-key'
       );
