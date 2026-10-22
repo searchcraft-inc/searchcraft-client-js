@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SearchApi } from '../../src/api/search';
 import type { HttpClient } from '../../src/core/http';
-import { createApiKey, createFederationName, createIndexName } from '../../src/types/index';
+import {
+  createApiKey,
+  createFederationName,
+  createIndexName,
+  RequestAbortedError,
+} from '../../src/types/index';
 
 function stringsToStream(chunks: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -198,6 +203,71 @@ describe('SearchApi', () => {
         }),
         'test-read-key'
       );
+    });
+  });
+  describe('abort signal', () => {
+    const request = { query: { fuzzy: { ctx: 'laptop' } } };
+
+    it('forwards the signal for searchIndex', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        data: {},
+      });
+      const { signal } = new AbortController();
+      await new SearchApi(mockConfig, mockHttpClient).searchIndex(
+        createIndexName('products'),
+        request,
+        { signal }
+      );
+      expect(mockHttpClient.request).toHaveBeenLastCalledWith(
+        expect.objectContaining({ signal }),
+        expect.anything()
+      );
+    });
+
+    it('forwards the signal for searchFederation', async () => {
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        headers: {},
+        data: {},
+      });
+      const { signal } = new AbortController();
+      await new SearchApi(mockConfig, mockHttpClient).searchFederation(
+        createFederationName('global'),
+        request,
+        { signal }
+      );
+      expect(mockHttpClient.request).toHaveBeenLastCalledWith(
+        expect.objectContaining({ signal }),
+        expect.anything()
+      );
+    });
+
+    it('searchSummary throws RequestAbortedError when aborted mid-stream', async () => {
+      const controller = new AbortController();
+      const encoder = new TextEncoder();
+      const body = new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(encoder.encode('event: delta\ndata: {"content":"a"}\n\n'));
+          controller.signal.addEventListener('abort', () => c.error(controller.signal.reason));
+        },
+      });
+      vi.mocked(mockHttpClient.stream).mockResolvedValueOnce({ status: 200, headers: {}, body });
+
+      const iter = new SearchApi(mockConfig, mockHttpClient).searchSummary(
+        createIndexName('products'),
+        request,
+        { signal: controller.signal }
+      );
+
+      const first = await iter[Symbol.asyncIterator]().next();
+      expect(first.value).toEqual({ type: 'delta', data: { content: 'a' } });
+
+      const it = iter[Symbol.asyncIterator]();
+      const next = it.next();
+      controller.abort();
+      await expect(next).rejects.toThrow(RequestAbortedError);
     });
   });
 });

@@ -6,6 +6,7 @@ import {
   createApiKey,
   NetworkError,
   NotFoundError,
+  RequestAbortedError,
 } from '../../src/types/index';
 
 // Mock fetch
@@ -454,6 +455,96 @@ describe('HttpClient', () => {
           createApiKey('k')
         )
       ).rejects.toThrow(NetworkError);
+    });
+  });
+  describe('abort signal', () => {
+    // Mimics fetch: rejects with the signal's reason once the signal aborts.
+    const abortableFetch = () =>
+      mockFetch.mockImplementationOnce(
+        (_url: string, init: RequestInit) =>
+          new Promise((_, reject) => {
+            init.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+          })
+      );
+
+    it('request rejects with RequestAbortedError when aborted mid-flight', async () => {
+      abortableFetch();
+      const controller = new AbortController();
+      const client = createHttpClient();
+
+      const pending = client.request(
+        { method: 'GET', path: 'http://localhost:8000/test', signal: controller.signal },
+        createApiKey('k')
+      );
+      controller.abort('stale');
+
+      const error = await pending.catch((e) => e);
+      expect(error).toBeInstanceOf(RequestAbortedError);
+      expect(error).not.toBeInstanceOf(NetworkError);
+      expect(error.reason).toBe('stale');
+    });
+
+    it('request does not call fetch when the signal is already aborted', async () => {
+      const client = createHttpClient();
+      await expect(
+        client.request(
+          { method: 'GET', path: 'http://localhost:8000/test', signal: AbortSignal.abort() },
+          createApiKey('k')
+        )
+      ).rejects.toThrow(RequestAbortedError);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('request still reports a timeout as NetworkError when a signal is supplied', async () => {
+      abortableFetch();
+      const client = createHttpClient();
+      const error = await client
+        .request(
+          {
+            method: 'GET',
+            path: 'http://localhost:8000/test',
+            timeout: 5,
+            signal: new AbortController().signal,
+          },
+          createApiKey('k')
+        )
+        .catch((e) => e);
+      expect(error).toBeInstanceOf(NetworkError);
+      expect(error.message).toBe('Request timeout');
+    });
+
+    it('stream rejects with RequestAbortedError when aborted before the response', async () => {
+      abortableFetch();
+      const controller = new AbortController();
+      const client = createHttpClient();
+
+      const pending = client.stream(
+        { method: 'POST', path: 'http://localhost:8000/stream', signal: controller.signal },
+        createApiKey('k')
+      );
+      controller.abort();
+
+      await expect(pending).rejects.toThrow(RequestAbortedError);
+    });
+
+    it('stream passes a signal to fetch that aborts with the caller signal', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        body: new ReadableStream(),
+      });
+      const controller = new AbortController();
+      const client = createHttpClient();
+      await client.stream(
+        { method: 'POST', path: 'http://localhost:8000/stream', signal: controller.signal },
+        createApiKey('k')
+      );
+
+      const fetchSignal = mockFetch.mock.calls[0]?.[1]?.signal as AbortSignal;
+      expect(fetchSignal.aborted).toBe(false);
+      controller.abort();
+      expect(fetchSignal.aborted).toBe(true);
     });
   });
 });

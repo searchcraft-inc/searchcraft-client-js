@@ -82,6 +82,7 @@ export type {
   PromptInstruction,
   QueryMode,
   QueryWithOccur,
+  RequestOptions,
   SearchcraftConfig,
   SearchHit,
   SearchOptions,
@@ -117,6 +118,7 @@ export {
   NotFoundError,
   permissionPresets,
   permissions,
+  RequestAbortedError,
   SearchcraftError,
   ValidationError,
 } from './types/index.js';

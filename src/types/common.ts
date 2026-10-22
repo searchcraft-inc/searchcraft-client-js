@@ -81,6 +81,20 @@ export interface SearchcraftConfig {
 }
 
 /**
+ * Per-call options accepted as the optional last argument of API methods
+ * that support cancellation.
+ */
+export interface RequestOptions {
+  /**
+   * An `AbortSignal` that cancels the request when aborted, e.g. from an
+   * `AbortController`. Aborting rejects the call with a
+   * {@link RequestAbortedError}. For streaming methods the signal also
+   * cancels the stream while it is being read.
+   */
+  readonly signal?: AbortSignal;
+}
+
+/**
  * HTTP request options
  */
 export interface HttpRequestOptions {
@@ -89,6 +103,8 @@ export interface HttpRequestOptions {
   readonly body?: unknown;
   readonly headers?: Readonly<Record<string, string>>;
   readonly timeout?: number;
+  /** Caller-supplied signal that cancels the request when aborted */
+  readonly signal?: AbortSignal;
 }
 
 /**

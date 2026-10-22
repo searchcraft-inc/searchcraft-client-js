@@ -42,6 +42,7 @@ export type {
   IndexName,
   OccurMode,
   QueryMode,
+  RequestOptions,
   SearchcraftConfig,
   SortDirection,
 } from './common.js';
@@ -69,6 +70,7 @@ export {
   ConfigurationError,
   NetworkError,
   NotFoundError,
+  RequestAbortedError,
   SearchcraftError,
   ValidationError,
 } from './errors.js';

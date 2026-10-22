@@ -9,7 +9,13 @@ import type {
   HttpResponse,
   HttpStreamResponse,
 } from '../types/index.js';
-import { ApiError, AuthenticationError, NetworkError, NotFoundError } from '../types/index.js';
+import {
+  ApiError,
+  AuthenticationError,
+  NetworkError,
+  NotFoundError,
+  RequestAbortedError,
+} from '../types/index.js';
 import { CLIENT_USER_AGENT, isNodeRuntime } from './version.js';
 
 /**
@@ -25,6 +31,7 @@ export interface HttpClient {
    * @throws {NotFoundError} When the server responds with 404.
    * @throws {ApiError} When the server responds with any other non-2xx status.
    * @throws {NetworkError} When the request times out or a network-level failure occurs.
+   * @throws {RequestAbortedError} When `options.signal` is aborted before the request completes.
    */
   request<T>(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpResponse<T>>;
 
@@ -40,6 +47,8 @@ export interface HttpClient {
    * @throws {NotFoundError} When the server responds with 404.
    * @throws {ApiError} When the server responds with any other non-2xx status.
    * @throws {NetworkError} When the initial response times out or a network-level failure occurs.
+   * @throws {RequestAbortedError} When `options.signal` is aborted before the response arrives.
+   *   Aborting later cancels the body stream, which errors while being read.
    */
   stream(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpStreamResponse>;
 }
@@ -96,6 +105,29 @@ const extractErrorMessage = (body: unknown): string => {
 export const unwrapData = <T>(response: HttpResponse<ApiResponse<T>>): T => response.data.data;
 
 /**
+ * Throws a {@link RequestAbortedError} if the caller's signal has been aborted.
+ * @param signal - The caller-supplied signal, if any.
+ * @throws {RequestAbortedError} When `signal` is already aborted.
+ */
+export const throwIfAborted = (signal: AbortSignal | undefined): void => {
+  if (signal?.aborted) {
+    throw new RequestAbortedError('Request aborted', signal.reason);
+  }
+};
+
+/**
+ * Combines the internal timeout signal with the caller's signal so that
+ * either one cancels the request.
+ * @param timeoutSignal - The signal driven by the request timeout.
+ * @param signal - The caller-supplied signal, if any.
+ * @returns A signal that aborts when either input aborts.
+ */
+const combineSignals = (
+  timeoutSignal: AbortSignal,
+  signal: AbortSignal | undefined
+): AbortSignal => (signal ? AbortSignal.any([timeoutSignal, signal]) : timeoutSignal);
+
+/**
  * Handles HTTP errors and throws the appropriate typed error.
  * @param status - The HTTP response status code.
  * @param data - The parsed response body, used to extract the error message.
@@ -130,9 +162,12 @@ export class FetchHttpClient implements HttpClient {
    * @throws {NotFoundError} When the server responds with 404.
    * @throws {ApiError} When the server responds with any other non-2xx status.
    * @throws {NetworkError} When the request times out or a network-level failure occurs.
+   * @throws {RequestAbortedError} When `options.signal` is aborted before the request completes.
    */
   async request<T>(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpResponse<T>> {
-    const { method, path, body, headers: customHeaders, timeout = 30000 } = options;
+    const { method, path, body, headers: customHeaders, timeout = 30000, signal } = options;
+
+    throwIfAborted(signal);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -142,7 +177,7 @@ export class FetchHttpClient implements HttpClient {
         method,
         headers: createHeaders(apiKey, customHeaders),
         body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
+        signal: combineSignals(controller.signal, signal),
       });
 
       clearTimeout(timeoutId);
@@ -167,6 +202,10 @@ export class FetchHttpClient implements HttpClient {
     } catch (error) {
       clearTimeout(timeoutId);
 
+      // A caller-initiated abort takes precedence over the timeout, since both
+      // surface as an AbortError from fetch.
+      throwIfAborted(signal);
+
       // Re-throw our custom errors
       if (
         error instanceof ApiError ||
@@ -188,7 +227,9 @@ export class FetchHttpClient implements HttpClient {
   }
 
   async stream(options: HttpRequestOptions, apiKey: ApiKey): Promise<HttpStreamResponse> {
-    const { method, path, body, headers: customHeaders, timeout = 30000 } = options;
+    const { method, path, body, headers: customHeaders, timeout = 30000, signal } = options;
+
+    throwIfAborted(signal);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -201,7 +242,7 @@ export class FetchHttpClient implements HttpClient {
           Accept: 'text/event-stream',
         },
         body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
+        signal: combineSignals(controller.signal, signal),
       });
 
       clearTimeout(timeoutId);
@@ -239,6 +280,8 @@ export class FetchHttpClient implements HttpClient {
       };
     } catch (error) {
       clearTimeout(timeoutId);
+
+      throwIfAborted(signal);
 
       if (
         error instanceof ApiError ||

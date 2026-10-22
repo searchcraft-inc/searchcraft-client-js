@@ -4,9 +4,11 @@
 
 import { getApiKey } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
+import { throwIfAborted } from '../core/http.js';
 import type {
   FederationName,
   IndexName,
+  RequestOptions,
   SearchcraftConfig,
   SearchRequest,
   SearchResponse,
@@ -60,6 +62,7 @@ export class SearchApi {
    * Performs a search on a specific index.
    * @param indexName - The name of the index to search.
    * @param request - The search request parameters including query, filters, limit, and offset.
+   * @param options - Optional per-call options. Pass `signal` to cancel the request.
    * @returns A promise resolving to the search response containing hits and metadata.
    * @throws {ValidationError} When `limit` is not positive or `offset` is negative.
    * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
@@ -67,12 +70,20 @@ export class SearchApi {
    * @throws {NotFoundError} When the specified index does not exist.
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
+   * @throws {RequestAbortedError} When `options.signal` is aborted before the request completes.
    * @example
    * const results = await client.search.searchIndex('products', { query: 'laptop', limit: 10 });
+   *
+   * // Cancel a stale request, e.g. when the user keeps typing:
+   * const controller = new AbortController();
+   * const pending = client.search.searchIndex('products', { query: 'lap' }, { signal: controller.signal });
+   * controller.abort();
+   * await pending.catch((e) => { if (!(e instanceof RequestAbortedError)) throw e; });
    */
   async searchIndex<T = unknown>(
     indexName: IndexName,
-    request: SearchRequest
+    request: SearchRequest,
+    options?: RequestOptions
   ): Promise<SearchResponse<T>> {
     // Validate pagination parameters
     if (request.limit !== undefined) {
@@ -91,6 +102,7 @@ export class SearchApi {
         path,
         body: request,
         timeout: this.config.timeout,
+        signal: options?.signal,
       },
       apiKey
     );
@@ -109,6 +121,7 @@ export class SearchApi {
    * synthetic `error` events instead of terminating the stream.
    * @param indexName - The name of the index to summarise search results for.
    * @param request - The search request used to retrieve candidate documents.
+   * @param options - Optional per-call options. Pass `signal` to cancel the request or the stream.
    * @returns An async iterable of {@link SummaryStreamEvent}s.
    * @throws {ValidationError} When `limit` is not positive or `offset` is negative.
    * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
@@ -116,14 +129,23 @@ export class SearchApi {
    * @throws {NotFoundError} When the specified index does not exist.
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the initial request times out or a network failure occurs.
+   * @throws {RequestAbortedError} When `options.signal` is aborted, either before the response
+   *   arrives or while the stream is being read.
    * @example
    * for await (const event of client.search.searchSummary('products', { query: { fuzzy: { ctx: 'laptop' } } })) {
    *   if (event.type === 'delta') process.stdout.write(event.data.content);
    * }
+   *
+   * // Stop streaming early:
+   * const controller = new AbortController();
+   * for await (const event of client.search.searchSummary('products', request, { signal: controller.signal })) {
+   *   if (event.type === 'delta' && enough()) controller.abort();
+   * }
    */
   async *searchSummary(
     indexName: IndexName,
-    request: SearchRequest
+    request: SearchRequest,
+    options?: RequestOptions
   ): AsyncIterable<SummaryStreamEvent> {
     if (request.limit !== undefined) {
       validateLimit(request.limit);
@@ -141,11 +163,25 @@ export class SearchApi {
         path,
         body: request,
         timeout: this.config.timeout,
+        signal: options?.signal,
       },
       apiKey
     );
 
-    for await (const event of parseSseStream(response.body)) {
+    try {
+      yield* this.parseSummaryEvents(response.body);
+    } catch (error) {
+      // Reading a cancelled body rejects with the fetch abort error; report it
+      // as the same typed error used for the initial request.
+      throwIfAborted(options?.signal);
+      throw error;
+    }
+  }
+
+  private async *parseSummaryEvents(
+    body: ReadableStream<Uint8Array>
+  ): AsyncIterable<SummaryStreamEvent> {
+    for await (const event of parseSseStream(body)) {
       const eventType = event.event ?? 'message';
       if (
         eventType !== 'metadata' &&
@@ -185,6 +221,7 @@ export class SearchApi {
    * Performs a federated search across multiple indices grouped under a federation.
    * @param federationName - The name of the federation to search.
    * @param request - The search request parameters including query, filters, limit, and offset.
+   * @param options - Optional per-call options. Pass `signal` to cancel the request.
    * @returns A promise resolving to the search response containing hits and metadata.
    * @throws {ValidationError} When `limit` is not positive or `offset` is negative.
    * @throws {ConfigurationError} When `readKey` is not set in the client configuration.
@@ -192,12 +229,14 @@ export class SearchApi {
    * @throws {NotFoundError} When the specified federation does not exist.
    * @throws {ApiError} When the server returns a non-2xx response.
    * @throws {NetworkError} When the request times out or a network failure occurs.
+   * @throws {RequestAbortedError} When `options.signal` is aborted before the request completes.
    * @example
    * const results = await client.search.searchFederation('global', { query: 'laptop', limit: 10 });
    */
   async searchFederation<T = unknown>(
     federationName: FederationName,
-    request: SearchRequest
+    request: SearchRequest,
+    options?: RequestOptions
   ): Promise<SearchResponse<T>> {
     // Validate pagination parameters
     if (request.limit !== undefined) {
@@ -216,6 +255,7 @@ export class SearchApi {
         path,
         body: request,
         timeout: this.config.timeout,
+        signal: options?.signal,
       },
       apiKey
     );

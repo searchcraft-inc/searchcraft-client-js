@@ -65,6 +65,25 @@ export class NetworkError extends SearchcraftError {
 }
 
 /**
+ * Error thrown when a request is cancelled by the caller through an
+ * `AbortSignal`. This is distinct from {@link NetworkError}, which reports
+ * timeouts and network failures: an abort is intentional, so callers will
+ * usually want to ignore it rather than surface it as a failure.
+ *
+ * The signal's `reason` (if any) is available as {@link RequestAbortedError.reason}.
+ */
+export class RequestAbortedError extends SearchcraftError {
+  constructor(
+    message = 'Request aborted',
+    public readonly reason?: unknown
+  ) {
+    super(message, 'REQUEST_ABORTED');
+    this.name = 'RequestAbortedError';
+    Object.setPrototypeOf(this, RequestAbortedError.prototype);
+  }
+}
+
+/**
  * Error thrown when the API returns an error
  */
 export class ApiError extends SearchcraftError {
