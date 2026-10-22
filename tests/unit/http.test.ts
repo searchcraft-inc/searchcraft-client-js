@@ -513,6 +513,80 @@ describe('HttpClient', () => {
       expect(error.message).toBe('Request timeout');
     });
 
+    // The caller gives up after the timeout fired but before fetch settled.
+    const timeoutThenCallerAbortFetch = (controller: AbortController) =>
+      mockFetch.mockImplementationOnce(
+        (_url: string, init: RequestInit) =>
+          new Promise((_, reject) => {
+            init.signal?.addEventListener('abort', () => {
+              controller.abort();
+              reject(init.signal?.reason);
+            });
+          })
+      );
+
+    it('request reports the timeout when it fires before a caller abort', async () => {
+      const controller = new AbortController();
+      timeoutThenCallerAbortFetch(controller);
+      const client = createHttpClient();
+
+      const error = await client
+        .request(
+          {
+            method: 'GET',
+            path: 'http://localhost:8000/test',
+            timeout: 5,
+            signal: controller.signal,
+          },
+          createApiKey('k')
+        )
+        .catch((e) => e);
+      expect(controller.signal.aborted).toBe(true);
+      expect(error).toBeInstanceOf(NetworkError);
+      expect(error.message).toBe('Request timeout');
+    });
+
+    it('request keeps an HTTP error when the caller aborts after it occurred', async () => {
+      const controller = new AbortController();
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        headers: new Headers(),
+        json: async () => {
+          controller.abort();
+          return { message: 'Server error' };
+        },
+      });
+      const client = createHttpClient();
+
+      await expect(
+        client.request(
+          { method: 'GET', path: 'http://localhost:8000/test', signal: controller.signal },
+          createApiKey('k')
+        )
+      ).rejects.toThrow(ApiError);
+    });
+
+    it('stream reports the timeout when it fires before a caller abort', async () => {
+      const controller = new AbortController();
+      timeoutThenCallerAbortFetch(controller);
+      const client = createHttpClient();
+
+      const error = await client
+        .stream(
+          {
+            method: 'POST',
+            path: 'http://localhost:8000/stream',
+            timeout: 5,
+            signal: controller.signal,
+          },
+          createApiKey('k')
+        )
+        .catch((e) => e);
+      expect(error).toBeInstanceOf(NetworkError);
+      expect(error.message).toBe('Request timeout');
+    });
+
     it('stream rejects with RequestAbortedError when aborted before the response', async () => {
       abortableFetch();
       const controller = new AbortController();

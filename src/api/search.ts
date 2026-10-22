@@ -169,13 +169,20 @@ export class SearchApi {
     );
 
     try {
-      yield* this.parseSummaryEvents(response.body);
+      for await (const event of this.parseSummaryEvents(response.body)) {
+        // Several events can arrive in one chunk and are yielded without
+        // another read, so the cancelled body alone won't stop them.
+        throwIfAborted(options?.signal);
+        yield event;
+      }
     } catch (error) {
       // Reading a cancelled body rejects with the fetch abort error; report it
       // as the same typed error used for the initial request.
       throwIfAborted(options?.signal);
       throw error;
     }
+    // An abort during the final event must not look like a completed summary.
+    throwIfAborted(options?.signal);
   }
 
   private async *parseSummaryEvents(

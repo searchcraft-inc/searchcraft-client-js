@@ -269,5 +269,37 @@ describe('SearchApi', () => {
       controller.abort();
       await expect(next).rejects.toThrow(RequestAbortedError);
     });
+
+    it('searchSummary does not yield buffered events after an abort', async () => {
+      const controller = new AbortController();
+      const body = stringsToStream([
+        'event: delta\ndata: {"content":"a"}\n\nevent: delta\ndata: {"content":"b"}\n\n',
+      ]);
+      vi.mocked(mockHttpClient.stream).mockResolvedValueOnce({ status: 200, headers: {}, body });
+
+      const it = new SearchApi(mockConfig, mockHttpClient)
+        .searchSummary(createIndexName('products'), request, { signal: controller.signal })
+        [Symbol.asyncIterator]();
+
+      const first = await it.next();
+      expect(first.value).toEqual({ type: 'delta', data: { content: 'a' } });
+
+      controller.abort();
+      await expect(it.next()).rejects.toThrow(RequestAbortedError);
+    });
+
+    it('searchSummary does not complete normally when aborted on the last event', async () => {
+      const controller = new AbortController();
+      const body = stringsToStream(['event: done\ndata: {"results_count":1}\n\n']);
+      vi.mocked(mockHttpClient.stream).mockResolvedValueOnce({ status: 200, headers: {}, body });
+
+      const it = new SearchApi(mockConfig, mockHttpClient)
+        .searchSummary(createIndexName('products'), request, { signal: controller.signal })
+        [Symbol.asyncIterator]();
+
+      await it.next();
+      controller.abort();
+      await expect(it.next()).rejects.toThrow(RequestAbortedError);
+    });
   });
 });

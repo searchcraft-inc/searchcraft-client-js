@@ -128,6 +128,20 @@ const combineSignals = (
 ): AbortSignal => (signal ? AbortSignal.any([timeoutSignal, signal]) : timeoutSignal);
 
 /**
+ * Reports whether the caller's signal, rather than the timeout, cancelled the
+ * request. The combined signal keeps the reason of whichever input aborted
+ * first, so a caller abort that lands after the timeout is not misreported.
+ * @param fetchSignal - The combined signal passed to fetch.
+ * @param signal - The caller-supplied signal, if any.
+ * @returns `true` when the caller's signal aborted first.
+ */
+const abortedByCaller = (
+  fetchSignal: AbortSignal,
+  signal: AbortSignal | undefined
+): signal is AbortSignal =>
+  signal !== undefined && fetchSignal.aborted && fetchSignal.reason === signal.reason;
+
+/**
  * Handles HTTP errors and throws the appropriate typed error.
  * @param status - The HTTP response status code.
  * @param data - The parsed response body, used to extract the error message.
@@ -171,13 +185,14 @@ export class FetchHttpClient implements HttpClient {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const fetchSignal = combineSignals(controller.signal, signal);
 
     try {
       const response = await fetch(path, {
         method,
         headers: createHeaders(apiKey, customHeaders),
         body: body ? JSON.stringify(body) : undefined,
-        signal: combineSignals(controller.signal, signal),
+        signal: fetchSignal,
       });
 
       clearTimeout(timeoutId);
@@ -202,17 +217,17 @@ export class FetchHttpClient implements HttpClient {
     } catch (error) {
       clearTimeout(timeoutId);
 
-      // A caller-initiated abort takes precedence over the timeout, since both
-      // surface as an AbortError from fetch.
-      throwIfAborted(signal);
-
-      // Re-throw our custom errors
+      // Re-throw our custom errors, even if the caller aborted after they occurred
       if (
         error instanceof ApiError ||
         error instanceof AuthenticationError ||
         error instanceof NotFoundError
       ) {
         throw error;
+      }
+
+      if (abortedByCaller(fetchSignal, signal)) {
+        throw new RequestAbortedError('Request aborted', signal.reason);
       }
 
       if (error instanceof Error) {
@@ -233,6 +248,7 @@ export class FetchHttpClient implements HttpClient {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const fetchSignal = combineSignals(controller.signal, signal);
 
     try {
       const response = await fetch(path, {
@@ -242,7 +258,7 @@ export class FetchHttpClient implements HttpClient {
           Accept: 'text/event-stream',
         },
         body: body ? JSON.stringify(body) : undefined,
-        signal: combineSignals(controller.signal, signal),
+        signal: fetchSignal,
       });
 
       clearTimeout(timeoutId);
@@ -281,8 +297,6 @@ export class FetchHttpClient implements HttpClient {
     } catch (error) {
       clearTimeout(timeoutId);
 
-      throwIfAborted(signal);
-
       if (
         error instanceof ApiError ||
         error instanceof AuthenticationError ||
@@ -290,6 +304,10 @@ export class FetchHttpClient implements HttpClient {
         error instanceof NetworkError
       ) {
         throw error;
+      }
+
+      if (abortedByCaller(fetchSignal, signal)) {
+        throw new RequestAbortedError('Request aborted', signal.reason);
       }
 
       if (error instanceof Error) {
