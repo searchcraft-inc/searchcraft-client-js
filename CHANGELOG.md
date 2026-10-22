@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Request cancellation.** `SearchApi.searchIndex()`, `searchFederation()`, and `searchSummary()` accept an optional `{ signal }` (`RequestOptions`) argument. Aborting the `AbortSignal` cancels the request, and for `searchSummary()` also the stream while it is being read.
+- `RequestAbortedError` (`code: 'REQUEST_ABORTED'`) is thrown when a request is cancelled by the caller. It is deliberately not a `NetworkError`, so timeouts and network failures remain distinguishable from intentional aborts. The signal's `reason` is exposed as `error.reason`.
+- New types: `RequestOptions`. `HttpRequestOptions` gains an optional `signal`, so custom `HttpClient` implementations can honour it.
+
 ## 0.3.0
 
 - This is a breaking update as the TypeScript dependency and Node version have been increased.

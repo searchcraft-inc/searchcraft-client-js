@@ -132,6 +132,57 @@ const dynamicQuery = dynamic().term('adaptive search').buildRequest();
 const response = await client.search.searchIndex(indexName, fuzzyQuery);
 ```
 
+### Cancelling Requests
+
+The search methods (`searchIndex`, `searchFederation`, and `searchSummary`)
+accept an optional last argument, `{ signal }`, where `signal` is a standard
+[`AbortSignal`](https://developer.mozilla.org/docs/Web/API/AbortSignal).
+Aborting it cancels the in-flight request and rejects the call with a
+`RequestAbortedError`.
+
+This is most useful for search-as-you-type, where a slow response to an older
+query must not overwrite the results of a newer one:
+
+```typescript
+import { RequestAbortedError } from '@searchcraft/client';
+
+let controller: AbortController | undefined;
+
+async function onInput(text: string) {
+  controller?.abort(); // cancel the previous, now-stale request
+  controller = new AbortController();
+
+  try {
+    const request = fuzzy().term(text).limit(10).buildRequest();
+    const results = await client.search.searchIndex(indexName, request, {
+      signal: controller.signal,
+    });
+    render(results);
+  } catch (error) {
+    if (error instanceof RequestAbortedError) return; // superseded, ignore
+    throw error;
+  }
+}
+```
+
+Notes:
+
+- An aborted request is **not** a `NetworkError`. `NetworkError` is reserved
+  for timeouts and network failures, so a plain `catch` for those will not
+  swallow intentional cancellations. Check for `RequestAbortedError`
+  explicitly. The signal's `reason`, if you supplied one to `abort(reason)`,
+  is available as `error.reason`.
+- A signal that is already aborted rejects immediately without sending a request.
+- Cancellation works alongside the client `timeout`. Whichever happens first
+  wins: a timeout still throws `NetworkError`, an abort throws `RequestAbortedError`.
+- Aborting cancels the request on the client; the server may still finish work
+  it has already started.
+- For `searchSummary`, the signal also cancels the stream while you are
+  iterating it, so you can stop an AI summary early. The pending `for await`
+  then throws `RequestAbortedError`.
+- `AbortSignal.timeout(ms)` and `AbortSignal.any([...])` work as signals too.
+- Other API methods (documents, indices, and so on) do not yet accept a signal.
+
 ### Query Builder
 
 The query builder provides a fluent, immutable API for constructing complex queries.
@@ -499,9 +550,11 @@ console.log('Message:', health.data);    // "Searchcraft is healthy."
 
 ### Search API
 
-- `searchIndex<T>(indexName: IndexName, request: SearchRequest): Promise<SearchResponse<T>>`
-- `searchFederation<T>(federationName: FederationName, request: SearchRequest): Promise<SearchResponse<T>>`
-- `searchSummary(indexName: IndexName, request: SearchRequest): AsyncIterable<SummaryStreamEvent>` — Streams an AI-generated summary as tagged `metadata` / `delta` / `done` / `error` events (engine 0.10.0+)
+- `searchIndex<T>(indexName: IndexName, request: SearchRequest, options?: RequestOptions): Promise<SearchResponse<T>>`
+- `searchFederation<T>(federationName: FederationName, request: SearchRequest, options?: RequestOptions): Promise<SearchResponse<T>>`
+- `searchSummary(indexName: IndexName, request: SearchRequest, options?: RequestOptions): AsyncIterable<SummaryStreamEvent>` — Streams an AI-generated summary as tagged `metadata` / `delta` / `done` / `error` events (engine 0.10.0+)
+
+`RequestOptions` is `{ signal?: AbortSignal }`. See [Cancelling Requests](#cancelling-requests).
 
 ### Document API
 
@@ -632,6 +685,7 @@ import {
   NotFoundError,
   ValidationError,
   NetworkError,
+  RequestAbortedError,
   ApiError,
 } from '@searchcraft/client';
 
@@ -642,8 +696,10 @@ try {
     console.error('Authentication failed');
   } else if (error instanceof ValidationError) {
     console.error('Validation error:', error.field);
+  } else if (error instanceof RequestAbortedError) {
+    // The request was cancelled through an AbortSignal. Usually safe to ignore.
   } else if (error instanceof NetworkError) {
-    console.error('Network error');
+    console.error('Network error (timeout or connection failure)');
   }
 }
 ```
