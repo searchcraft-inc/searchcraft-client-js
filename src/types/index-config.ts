@@ -20,14 +20,6 @@ export interface FieldConfig {
   readonly multi?: boolean;
   readonly required?: boolean;
   /**
-   * Whether field norms are recorded, which the engine needs for length
-   * normalization during scoring. Applies to numeric, boolean and datetime
-   * fields; defaults to whatever `indexed` is.
-   */
-  readonly fieldnorms?: boolean;
-  /** For datetime fields: "seconds", "milliseconds", "microseconds", "nanoseconds" */
-  readonly precision?: string;
-  /**
    * For json fields: how string values within the JSON are indexed.
    * "raw" (exact, case-sensitive), "lowercase" (case-insensitive exact),
    * or "default" (tokenized full-text search). Defaults to "raw".
