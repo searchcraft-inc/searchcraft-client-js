@@ -7,6 +7,11 @@
 - **Request cancellation.** `SearchApi.searchIndex()`, `searchFederation()`, and `searchSummary()` accept an optional `{ signal }` (`RequestOptions`) argument. Aborting the `AbortSignal` cancels the request, and for `searchSummary()` also the stream while it is being read.
 - `RequestAbortedError` (`code: 'REQUEST_ABORTED'`) is thrown when a request is cancelled by the caller. It is deliberately not a `NetworkError`, so timeouts and network failures remain distinguishable from intentional aborts. The signal's `reason` is exposed as `error.reason`.
 - New types: `RequestOptions`. `HttpRequestOptions` gains an optional `signal`, so custom `HttpClient` implementations can honour it.
+- `permissionPresets.AI` (`LLM_RAG_SUMMARIES`, `64`) and `permissionPresets.ANALYTICS` (`READ_ANALYTICS`, `256`). These are add-ons, combined with a level using bitwise OR, e.g. `permissionPresets.READ | permissionPresets.AI` for a public key that can request AI summaries.
+
+### Removed
+
+- **Breaking:** `fieldnorms` and `precision` are removed from `FieldConfig`. Both are engine internals that are not part of the documented Searchcraft API, so the client no longer exposes them. Omitting them leaves the engine's defaults in place, and existing indexes are unaffected.
 
 ## 0.3.0
 

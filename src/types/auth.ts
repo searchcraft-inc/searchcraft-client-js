@@ -35,6 +35,12 @@ export const permissions = {
 /**
  * Conventional permission masks.
  *
+ * `READ`, `INGEST`, `ADMIN` and `SUPER_USER` are levels: what a key can
+ * change. `AI` and `ANALYTICS` are add-ons for features a key can use on top
+ * of its level. Combine them with bitwise OR, e.g. `READ | AI` for a public key
+ * that can request AI summaries. Use `|`, not `+`: OR is safe to repeat, while
+ * `READ + READ` is `2`, a different permission.
+ *
  * `SUPER_USER` includes the AI and analytics bits, so it exceeds 255 — a key
  * permission is a number, never one of a fixed set of levels.
  */
@@ -55,7 +61,7 @@ export const permissionPresets = {
     permissions.MODIFY_DOCUMENTS |
     permissions.MODIFY_INDEX |
     permissions.MODIFY_AUTH,
-  /** Every permission the engine defines, including AI and analytics. */
+  /** Every permission the engine defines, including AI and analytics (511). */
   SUPER_USER:
     permissions.SEARCH |
     permissions.MODIFY_SYNONYMS |
@@ -66,6 +72,10 @@ export const permissionPresets = {
     permissions.LLM_RAG_SUMMARIES |
     permissions.LLM_EXPANDED_KEYWORD_SEARCH |
     permissions.READ_ANALYTICS,
+  /** Add-on: AI summaries and semantic search (64). */
+  AI: permissions.LLM_RAG_SUMMARIES,
+  /** Add-on: read the measure dashboards (256). */
+  ANALYTICS: permissions.READ_ANALYTICS,
 } as const;
 
 /**

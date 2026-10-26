@@ -14,6 +14,17 @@ describe('auth key permissions', () => {
     expect(hasPermissions(permissionPresets.SUPER_USER, permissions.READ_ANALYTICS)).toBe(true);
   });
 
+  it('combines levels and add-ons with bitwise OR', () => {
+    const { READ, ADMIN, SUPER_USER, AI, ANALYTICS } = permissionPresets;
+    expect(AI).toBe(permissions.LLM_RAG_SUMMARIES);
+    expect(ANALYTICS).toBe(permissions.READ_ANALYTICS);
+    expect(READ | AI).toBe(65);
+    expect(READ | AI | ANALYTICS).toBe(321);
+    // Every add-on on top of admin still stops short of a super user.
+    expect(ADMIN | AI | ANALYTICS).toBe(383);
+    expect(SUPER_USER).toBe(511);
+  });
+
   it('tests individual bits', () => {
     expect(hasPermissions(permissionPresets.INGEST, permissions.MODIFY_DOCUMENTS)).toBe(true);
     expect(
